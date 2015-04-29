@@ -198,7 +198,6 @@ def update_log():
 # Returns the type of the selected element in the browser          
 # This nice function has been written by Björn Sonnenschein 
 def detect_strip_type(filepath):
-    print (filepath)
 
     imb_ext_movie = [
     ".avi",
@@ -251,7 +250,6 @@ def detect_strip_type(filepath):
         type = 'SOUND'
     else:
         type = None
-    print (type)
     return type
 
 # --- CLASSES ---------------------------------------------------------------------
