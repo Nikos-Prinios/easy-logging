@@ -13,7 +13,7 @@ FROM A NORMAL SEQUENCE
 - Local edit : uncheck if you use a dual-screen system. One for the normal sequence, one for the editing table
 
 FROM THE EDITING TABLE
-- edit clip : import the clip from the file browser to the editing table.
+- <b>edit clip :</b> import the clip from the file browser to the editing table.
 - in : define the starting point of your clip
 - out : define the end point of your clip
 - set in&out : define both in and out accordingly to the length of the active strip
