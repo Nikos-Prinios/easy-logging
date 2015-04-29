@@ -8,7 +8,7 @@ When you pick a clip from a folder, easy logging brings it to an editing table w
 In the video sequencer
 # List of functions
 FROM A NORMAL SEQUENCE
-- <b>import clip :</b> imports the clip directly from the file browser to your sequence. If the clip has already been logged, it is imported already trimmed.
+- <b>import clip :</b> imports the clip directly from the file browser to your sequence. If the clip has been logged, it is imported already trimmed.
 - <b>edit clip :</b> imports the clip from the file browser to the editing table.
 - <b>Local edit :</b> uncheck if you use a dual-screen system. One for the normal sequence, one for the editing table
 
