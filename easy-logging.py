@@ -51,7 +51,6 @@ if os.path.exists(log_file):
 else:
     log = []
 
-print(log)
 inpoint = 0
 outpoint = 0
 tags = 'none'
@@ -72,7 +71,6 @@ def update_log_file():
 # Add a new clip
 def add_clip(clip,inpoint,outpoint):
     log.append([[clip,inpoint,outpoint]])
-    print(log)
 
 # Add tag to a referenced clip
 def add_tag(clip,name,inpoint,outpoint):
@@ -82,7 +80,6 @@ def add_tag(clip,name,inpoint,outpoint):
     else:
         id = clip
     log[id].append(tag)
-    print(log)
  
 # Check if a clip is already referenced and return its id
 def clip_exists(clip):
@@ -90,27 +87,23 @@ def clip_exists(clip):
         if clip in x[0]:
             return (True,log.index(x))
     return (False, -1)
-    print(log)
 
 # Update a clip in point
 def update_inpoint(clip,inpoint):
     exists,id = clip_exists(clip)
     if exists:
         log[id][0][1] = inpoint
-        print(log)
         
 # Update a clip out point
 def update_outpoint(clip,outpoint):
     exists,id = clip_exists(clip)
     if exists:
         log[id][0][2] = outpoint
-        print(log)
 
 # Update a clip in & out points
 def update_clip(clip,inpoint,outpoint):
     update_inpoint(clip,inpoint)
     update_outpoint(clip,outpoint)
-    print(log)
 
 # Update a tag or create it
 def update_tag(clip,tag,inpoint,outpoint):
@@ -124,7 +117,6 @@ def update_tag(clip,tag,inpoint,outpoint):
                 updated = True
     if not updated:
         add_tag(id,tag,inpoint,outpoint)
-    print(log)
 
 # Return the list of tags of a clip
 def tag_list(clip):
@@ -285,8 +277,8 @@ class iop_panel(bpy.types.Header):
                 layout.separator()
                 row.operator("sequencer.setin", icon="TRIA_RIGHT")
                 row.operator("sequencer.setout", icon='TRIA_LEFT')
-                row.operator("sequencer.setinout", icon='TRIA_LEFT')
-                row.operator("sequencer.addtag", icon='TRIA_LEFT')
+                row.operator("sequencer.setinout", icon='FULLSCREEN_EXIT')
+                row.operator("sequencer.addtag", icon='PLUS')
                 row.operator("sequencer.place", icon="PASTEFLIPDOWN")
                 row.prop(context.scene,"meta")
                 row.operator("sequencer.back", icon="LOOP_BACK")
@@ -370,52 +362,48 @@ class OBJECT_OT_import(bpy.types.Operator):
                 clip = the_path + the_file
                 break
 
-        clip_object = get_clip(clip)
-        start = clip_object[1]
-        end = clip_object[2]
+        exists,id = clip_exists(clip)
+        if exists:
+            clip_object = get_clip(clip)
+            start = clip_object[1]
+            end = clip_object[2]
 
-        if bpy.context.screen.scene.name != 'Editing table':
-            set_as_main_scene()
+            if bpy.context.screen.scene.name != 'Editing table':
+                set_as_main_scene()
+            reset_editing_table()
 
-        reset_editing_table()
-
-        bpy.context.screen.scene = bpy.data.scenes['Editing table']
-        if start != -1 and end != -1 :
-            file_type = detect_strip_type(clip)
-            
-            original_type = bpy.context.area.type
-            bpy.context.area.type = "SEQUENCE_EDITOR"
-            if (file_type == "MOVIE"):
-                bpy.ops.sequencer.movie_strip_add(frame_start=1, filepath=clip)
-            if (file_type == "SOUND"):
-                bpy.ops.sequencer.sound_strip_add(frame_start=1, filepath=clip)
-            bpy.context.area.type = original_type
-
-            bpy.data.scenes['Editing table'].frame_start = start if start > 0 else 1 
-            bpy.data.scenes['Editing table'].frame_end = end if end >1 else bpy.context.scene.sequence_editor.active_strip.frame_final_duration +1
-                
-            bpy.context.scene.frame_current = start
-            bpy.ops.sequencer.cut(frame=start, type='SOFT', side='LEFT')
-            bpy.ops.sequencer.delete()
-
-            bpy.ops.sequencer.select_all(action = "SELECT")
-            
-            bpy.context.scene.frame_current = end
-            bpy.ops.sequencer.cut(frame=end, type='SOFT', side='RIGHT')
-            bpy.ops.sequencer.delete()
-            
-            bpy.context.scene.frame_current = start
-            bpy.ops.sequencer.select_all(action = "SELECT")
-            bpy.ops.sequencer.copy()
-            goto_main_scene()
-            bpy.ops.sequencer.paste()
-            bpy.context.scene.frame_current = bpy.context.scene.frame_current + (end-start)
+            bpy.context.screen.scene = bpy.data.scenes['Editing table']
+            if start != -1 and end != -1 :
+                file_type = detect_strip_type(clip)
+                #--
+                original_type = bpy.context.area.type
+                bpy.context.area.type = "SEQUENCE_EDITOR"
+                if (file_type == "MOVIE"):
+                    bpy.ops.sequencer.movie_strip_add(frame_start=1, filepath=clip)
+                if (file_type == "SOUND"):
+                    bpy.ops.sequencer.sound_strip_add(frame_start=1, filepath=clip)
+                bpy.context.area.type = original_type
+                #--
+                bpy.data.scenes['Editing table'].frame_start = start if start > 0 else 1 
+                bpy.data.scenes['Editing table'].frame_end = end if end >1 else bpy.context.scene.sequence_editor.active_strip.frame_final_duration +1
+                #--  
+                bpy.context.scene.frame_current = start
+                bpy.ops.sequencer.cut(frame=start, type='SOFT', side='LEFT')
+                bpy.ops.sequencer.delete()
+                bpy.ops.sequencer.select_all(action = "SELECT")
+                bpy.context.scene.frame_current = end
+                bpy.ops.sequencer.cut(frame=end, type='SOFT', side='RIGHT')
+                bpy.ops.sequencer.delete()
+                #--
+                bpy.context.scene.frame_current = start
+                bpy.ops.sequencer.select_all(action = "SELECT")
+                bpy.ops.sequencer.copy()
+                goto_main_scene()
+                bpy.ops.sequencer.paste()
+                bpy.context.scene.frame_current = bpy.context.scene.frame_current + (end-start)
         else:
-            file_type = detect_strip_type(clip)
-            if (file_type == "MOVIE"):
-                    bpy.ops.sequencer.movie_strip_add(filepath=clip, frame_start=bpy.context.scene.frame_current)
-            if (file_type == "SOUND"):
-                    bpy.ops.sequencer.sound_strip_add(filepath=clip, frame_start=bpy.context.scene.frame_current)
+            bpy.ops.sequencer.movie_strip_add(filepath=clip, frame_start=bpy.context.scene.frame_current)
+
             
         
         return {'FINISHED'}
@@ -551,6 +539,7 @@ class OBJECT_OT_Back(bpy.types.Operator):
     def invoke(self, context, event):
         global main_scene
         if bpy.context.screen.scene == bpy.data.scenes['Editing table']:
+            update_log()
             goto_main_scene()
         return {'FINISHED'}
 
