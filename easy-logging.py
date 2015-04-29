@@ -285,6 +285,7 @@ class iop_panel(bpy.types.Header):
                 layout.separator()
                 row.operator("sequencer.setin", icon="TRIA_RIGHT")
                 row.operator("sequencer.setout", icon='TRIA_LEFT')
+                row.operator("sequencer.setinout", icon='TRIA_LEFT')
                 row.operator("sequencer.addtag", icon='TRIA_LEFT')
                 row.operator("sequencer.place", icon="PASTEFLIPDOWN")
                 row.prop(context.scene,"meta")
@@ -493,7 +494,22 @@ class OBJECT_OT_addTag(bpy.types.Operator):
         outpoint = inpoint + 50
         new_tag_strip(inpoint,outpoint,'new tag')
         return {'FINISHED'}
-  
+
+# creating the SET IN&OUT button operator - 2.0
+class OBJECT_OT_setInOut(bpy.types.Operator): 
+    bl_label = "Set In & Out"
+    bl_idname = "sequencer.setinout"
+    bl_description = "Use selected tag strip to set the In and Out points of the editing table"
+        
+    def invoke(self, context, event):
+        tag_strip = bpy.context.scene.sequence_editor.active_strip
+        if bpy.context.screen.scene == bpy.data.scenes['Editing table']:
+            inpoint = tag_strip.frame_start
+            outpoint = tag_strip.frame_final_end
+            bpy.data.scenes['Editing table'].frame_start = inpoint
+            bpy.data.scenes['Editing table'].frame_end = outpoint
+        return {'FINISHED'}
+
 # creating the IN button operator - 2.0
 class OBJECT_OT_Setin(bpy.types.Operator): 
     bl_label = "IN"
@@ -566,6 +582,7 @@ def register():
     bpy.utils.register_class(OBJECT_OT_Trim)
     bpy.utils.register_class(OBJECT_OT_Setin)
     bpy.utils.register_class(OBJECT_OT_addTag)
+    bpy.utils.register_class(OBJECT_OT_setInOut)
     bpy.utils.register_class(OBJECT_OT_Setout)
     bpy.utils.register_class(OBJECT_OT_Place)
     bpy.utils.register_class(OBJECT_OT_Back)
@@ -584,6 +601,7 @@ def unregister():
     bpy.utils.unregister_class(OBJECT_OT_Trim)
     bpy.utils.unregister_class(OBJECT_OT_Setin)
     bpy.utils.register_class(OBJECT_OT_addTag)
+    bpy.utils.register_class(OBJECT_OT_setInOut)
     bpy.utils.unregister_class(OBJECT_OT_Setout)
     bpy.utils.unregister_class(OBJECT_OT_Place)
     bpy.utils.unregister_class(OBJECT_OT_Back)
