@@ -3,7 +3,7 @@ A footage logging system for Blender VSE
 # What can it do ?
 Derushing tons of footage, adding tags, 3-point editing.
 # Principle
-When you pick a clip from a folder, easy logging brings it to an editing table where you can choose its IN and OUT point and define some tags.
+When you pick a clip from a folder, easy logging brings it to an editing table where you can choose its IN and OUT points and define some tags.
 # Where is it ?
 In the video sequencer
 # List of functions
