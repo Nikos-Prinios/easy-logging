@@ -414,6 +414,13 @@ class OBJECT_OT_Trim(bpy.types.Operator):
     
     def invoke(self, context, event):
         global main_scene, clip, clip_object
+        
+         # set current scene as main scene
+        if bpy.context.screen.scene.name != 'Editing table':
+            set_as_main_scene()
+        else:
+            update_log()
+
         #get directory & name (path - clip)
         for a in bpy.context.window.screen.areas:
             if a.type == 'FILE_BROWSER':
@@ -422,10 +429,6 @@ class OBJECT_OT_Trim(bpy.types.Operator):
                 the_file = params.filename
                 clip = the_path + the_file
                 break
-
-        # set current scene as main scene
-        if bpy.context.screen.scene.name != 'Editing table':
-            set_as_main_scene()
 
         #create the log scene if it doesn't already exist
         reset_editing_table()
@@ -476,6 +479,7 @@ class OBJECT_OT_addTag(bpy.types.Operator):
     bl_description = "Add a new tag to the clip"
         
     def invoke(self, context, event):
+        bpy.ops.sequencer.select_all(action = "DESELECT")
         inpoint = bpy.data.scenes['Editing table'].frame_current
         outpoint = inpoint + 50
         new_tag_strip(inpoint,outpoint,'new tag')
@@ -494,6 +498,7 @@ class OBJECT_OT_setInOut(bpy.types.Operator):
             outpoint = tag_strip.frame_final_end
             bpy.data.scenes['Editing table'].frame_start = inpoint
             bpy.data.scenes['Editing table'].frame_end = outpoint
+            update_clip(clip, inpoint, outpoint)
         return {'FINISHED'}
 
 # creating the IN button operator - 2.0
