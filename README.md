@@ -11,6 +11,7 @@ FROM A NORMAL SEQUENCE
 - import clip :
 - edit clip :
 - Local edit :
+
 FROM THE EDITING TABLE SEQUENCE
 - edit clip :
 - in :
