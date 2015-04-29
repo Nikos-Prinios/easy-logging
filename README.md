@@ -20,4 +20,4 @@ FROM THE EDITING TABLE
 - <b>add tag :</b> adds a tag strip to the clip
 - <b>place :</b> places the logged clip back to your main sequence
 - <b>as meta :</b> ask for the clip to be packed as a metastrip (in case you added some other element in the editing table)
-- <b>back to sequence :</b> saves the log and get back to your main sequence
+- <b>back to sequence :</b> brings you back to the main sequence
