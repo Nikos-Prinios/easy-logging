@@ -127,6 +127,15 @@ def tag_list(clip):
             tags.append([y[0],y[1],y[2]])
         return tags
 
+# Remove a tag from a clip
+def remove_tag(clip, tag):
+    exists,id = clip_exists(clip)
+    if exists:
+        for x in log[id][1:]:
+            if x[0] == tag :
+                i = log[id].index(x)
+                log[id].pop(i)
+
 # Return the clip_object [name,in,out]
 def get_clip(clip):
     exists,id = clip_exists(clip)
@@ -180,14 +189,23 @@ def new_tag_strip(inpoint,outpoint,name):
 
 # Update clip and tags in the log
 def update_log():
-    global clip
+    global clip, log
     # tags
+    new_tag_list = []
     for s in bpy.context.scene.sequence_editor.sequences_all:
         if s.type == 'COLOR':
+            new_tag_list.append(s.name)
             tag = s.name
             inpoint = s.frame_start
             outpoint = s.frame_final_end
             update_tag(clip,tag,inpoint,outpoint)
+    # delete removed tags
+    old_tag_list = tag_list(clip)
+    for x in old_tag_list:
+        if not x[0] in new_tag_list:
+            remove_tag(clip,x[0])
+
+    # si il n'existe pas dans la liste des color strips : les enlever (prevoir une def remove tag)
     # clip
     inpoint = bpy.data.scenes['Editing table'].frame_start
     outpoint = bpy.data.scenes['Editing table'].frame_end
