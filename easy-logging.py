@@ -151,7 +151,7 @@ def reset_editing_table():
         bpy.ops.scene.delete()                                    
     new_scene = bpy.data.scenes.new('Editing table')
     new_scene.render.fps = main_scene.render.fps
-    new_scene.use_audio_scrub = True
+    #new_scene.use_audio_scrub = True
     new_scene.use_audio_sync = True
     new_scene.use_frame_drop = True
     return True
