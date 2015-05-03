@@ -359,8 +359,7 @@ class iop_panel(bpy.types.Header):
     def draw(self, context):
         layout = self.layout
         layout.separator()
-        #if scene_exists('Editing table'):
-        if bpy.context.screen.scene == bpy.data.scenes['Editing table']:
+        if bpy.context.screen.scene.name == 'Editing table':
             row=layout.row()
             row.operator("sequencer.trim", icon="ARROW_LEFTRIGHT")
             layout.separator()
@@ -371,11 +370,6 @@ class iop_panel(bpy.types.Header):
             row.operator("sequencer.place", icon="PASTEFLIPDOWN")
             row.prop(context.scene,"meta")
             row.operator("sequencer.back", icon="LOOP_BACK")
-            #else:
-            #    row=layout.row()
-            #    row.operator("sequencer.import", icon="ZOOMIN")
-            #    row.operator("sequencer.trim", icon="ARROW_LEFTRIGHT")
-            #    row.prop(context.scene,"local_edit")
         elif bpy.context.screen.scene.name.startswith('Tag: ') and main_scene:
             row=layout.row()
             #row.operator("sequencer.setinout", icon='FULLSCREEN_EXIT')
