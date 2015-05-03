@@ -291,6 +291,9 @@ def import_clip(scene,clip,inpoint,outpoint):
         bpy.ops.marker.rename(name=os.path.basename(clip))
         bpy.context.scene.frame_current += length + 1
         bpy.context.scene.frame_end = bpy.context.scene.frame_current
+        bpy.ops.sequencer.select_all(action='TOGGLE')
+        bpy.ops.sequencer.view_selected()
+
     bpy.context.screen.scene = original_scene
     bpy.context.area.type = original_type
 
@@ -316,7 +319,7 @@ def create_tag_scenes():
                     new_scene.use_frame_drop = True
                 scene = bpy.data.scenes[tag]
                 import_clip(scene, clip_file[0][0], inpoint, outpoint)
-                print('imported ' + tag + ' ' + str(inpoint) + ' ' + str(outpoint))
+
 
 # Create new log file
 def create_new_log_file():
@@ -700,7 +703,6 @@ def register():
     bpy.utils.register_class(OBJECT_OT_Back)
     #bpy.utils.register_class(SEQUENCER_OT_createlog)
     #bpy.types.OBJECT_MT_easy_log.append(log_func)
-    #bpy.utils.register_class(tags_panel)
     bpy.types.OBJECT_MT_easy_log.append(createTagScene_func)
     bpy.types.OBJECT_MT_easy_log.append(createNewLogfile_func)
     bpy.utils.register_class(SEQUENCER_OT_create_tag_scenes)
@@ -714,14 +716,14 @@ def unregister():
     bpy.utils.unregister_class(iop_panel)
     bpy.utils.unregister_class(OBJECT_OT_Trim)
     bpy.utils.unregister_class(OBJECT_OT_Setin)
-    bpy.utils.register_class(OBJECT_OT_addTag)
-    bpy.utils.register_class(OBJECT_OT_setInOut)
+    bpy.utils.unregister_class(OBJECT_OT_addTag)
+    bpy.utils.unregister_class(OBJECT_OT_setInOut)
     bpy.utils.unregister_class(OBJECT_OT_Setout)
     bpy.utils.unregister_class(OBJECT_OT_Place)
     bpy.utils.unregister_class(OBJECT_OT_Back)
     #bpy.utils.unregister_class(SEQUENCER_OT_createlog)
     #bpy.types.OBJECT_MT_easy_log.remove(log_func)
-    #bpy.utils.unregister_class(tags_panel)
+    
     bpy.types.OBJECT_MT_easy_log.remove(createTagScene_func)
     bpy.types.OBJECT_MT_easy_log.remove(createNewLogfile_func)
     bpy.utils.unregister_class(SEQUENCER_OT_create_tag_scenes)
