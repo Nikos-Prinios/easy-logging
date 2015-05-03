@@ -284,15 +284,11 @@ def import_clip(scene,clip,inpoint,outpoint):
         for s in bpy.context.selected_sequences:
             s.frame_final_start = frame + inpoint
             s.frame_final_end = frame + outpoint
-            #s.frame_final_duration = length
-        #bpy.ops.transform.seq_slide(value=(frame-inpoint, 0))
         bpy.ops.sequencer.snap(frame = bpy.context.scene.frame_current)
         bpy.ops.marker.add()
         bpy.ops.marker.rename(name=os.path.basename(clip))
         bpy.context.scene.frame_current += length + 1
         bpy.context.scene.frame_end = bpy.context.scene.frame_current
-        bpy.ops.sequencer.select_all(action='TOGGLE')
-        bpy.ops.sequencer.view_selected()
 
     bpy.context.screen.scene = original_scene
     bpy.context.area.type = original_type
@@ -320,6 +316,15 @@ def create_tag_scenes():
                 scene = bpy.data.scenes[tag]
                 import_clip(scene, clip_file[0][0], inpoint, outpoint)
 
+    original_type = bpy.context.area.type
+    bpy.context.area.type = "SEQUENCE_EDITOR"
+    for i in bpy.data.scenes:
+        if i.name.startswith('Tag: ') :
+            bpy.context.screen.scene = i
+            bpy.ops.sequencer.select_all(action = "SELECT")
+            bpy.ops.sequencer.view_selected()
+    bpy.context.area.type = original_type
+    bpy.context.screen.scene = main_scene
 
 # Create new log file
 def create_new_log_file():
@@ -375,7 +380,6 @@ class iop_panel(bpy.types.Header):
             row.operator("sequencer.back", icon="LOOP_BACK")
         elif bpy.context.screen.scene.name.startswith('Tag: ') and main_scene:
             row=layout.row()
-            #row.operator("sequencer.setinout", icon='FULLSCREEN_EXIT')
             row.operator("sequencer.place", icon="PASTEFLIPDOWN")
             row.operator("sequencer.back", icon="LOOP_BACK")
         else:
@@ -437,7 +441,6 @@ class OBJECT_OT_Place(bpy.types.Operator):
                 bpy.ops.sequencer.paste()
                 bpy.context.scene.frame_current = bpy.context.scene.frame_current + (outpoint-inpoint)
                 return {'FINISHED'}
-
 
 # Creating the IMPORT button operator - 2.0
 class OBJECT_OT_import(bpy.types.Operator): 
@@ -723,9 +726,6 @@ def unregister():
     bpy.utils.unregister_class(OBJECT_OT_Back)
     #bpy.utils.unregister_class(SEQUENCER_OT_createlog)
     #bpy.types.OBJECT_MT_easy_log.remove(log_func)
-    
-    bpy.types.OBJECT_MT_easy_log.remove(createTagScene_func)
-    bpy.types.OBJECT_MT_easy_log.remove(createNewLogfile_func)
     bpy.utils.unregister_class(SEQUENCER_OT_create_tag_scenes)
     bpy.utils.unregister_class(SEQUENCER_OT_create_new_log_file)
     bpy.utils.unregister_class(OBJECT_OT_import)
