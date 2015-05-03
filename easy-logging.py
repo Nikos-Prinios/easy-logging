@@ -30,7 +30,7 @@ bl_info = {
 
 # -- IMPORT ------------------------------------------------------------
 import bpy, random, time, os
-import pickle
+import pickle, time
 
 
 # -- Custom Properties & VARIABLES -------------------------------------
@@ -145,17 +145,17 @@ def get_clip(clip):
         add_clip(clip,-1,-1)
     return [clip,-1,-1]
 
-# Returns TRUE if the scene 'Editing table' already exists
-def editing_table_exists():
+# Returns TRUE if the scene already exists
+def scene_exists(scene):
     for i in bpy.data.scenes:
-        if i.name == 'Editing table':
+        if i.name == scene:
             return True
     return False
 
 # Create the 'Editing table' scene
 def reset_editing_table():
     global main_scene
-    if editing_table_exists():
+    if scene_exists('Editing table'):
         bpy.context.screen.scene = bpy.data.scenes['Editing table']
         bpy.ops.scene.delete()                                    
     new_scene = bpy.data.scenes.new('Editing table')
@@ -270,9 +270,82 @@ def detect_strip_type(filepath):
         type = None
     return type
 
+# import a trimed clip into a scene
+def import_clip(scene,clip,inpoint,outpoint):
+    original_type = bpy.context.area.type
+    bpy.context.area.type = "SEQUENCE_EDITOR"
+    original_scene = bpy.context.screen.scene
+   
+    if inpoint < outpoint:
+        bpy.context.screen.scene = bpy.data.scenes[scene.name]
+        frame = bpy.context.scene.frame_current
+        bpy.ops.sequencer.movie_strip_add(filepath=clip, frame_start=frame)
+        length = outpoint - inpoint 
+        for s in bpy.context.selected_sequences:
+            s.frame_final_start = frame + inpoint
+            s.frame_final_end = frame + outpoint
+            #s.frame_final_duration = length
+        #bpy.ops.transform.seq_slide(value=(frame-inpoint, 0))
+        bpy.ops.sequencer.snap(frame = bpy.context.scene.frame_current)
+        bpy.ops.marker.add()
+        bpy.ops.marker.rename(name=os.path.basename(clip))
+        bpy.context.scene.frame_current += length + 1
+        bpy.context.scene.frame_end = bpy.context.scene.frame_current
+    bpy.context.screen.scene = original_scene
+    bpy.context.area.type = original_type
+
+# Create the tag scenes
+def create_tag_scenes():
+    main_scene = bpy.context.screen.scene
+    # iterate through all the scene and delete those begining by tag:
+    for i in bpy.data.scenes:
+        if i.name.startswith('Tag: ') :
+            bpy.context.screen.scene = i
+            bpy.ops.scene.delete() 
+    for clip_file in log:
+        if len(clip_file) > 1 :
+            for tag_obj in clip_file[1:]:
+                tag = 'Tag: ' + tag_obj[0].split('.', 1)[0]
+                inpoint = tag_obj[1]
+                outpoint = tag_obj[2]
+                length = outpoint-inpoint
+                if not scene_exists(tag):
+                    new_scene = bpy.data.scenes.new(tag)
+                    new_scene.render.fps = main_scene.render.fps
+                    new_scene.use_audio_sync = True
+                    new_scene.use_frame_drop = True
+                scene = bpy.data.scenes[tag]
+                import_clip(scene, clip_file[0][0], inpoint, outpoint)
+                print('imported ' + tag + ' ' + str(inpoint) + ' ' + str(outpoint))
+
+# Create new log file
+def create_new_log_file():
+    log[:] = []
+    filename = 'Easy-Logging-log-file.txt'
+    new_name = filename[:-4]+' [' + time.strftime("%x") + '].txt'
+    new_name = new_name.replace('/','-')
+    directory = 'Easy-logging files'
+    if os.path.isfile(filename):
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        os.rename(filename,directory + '/' + new_name)
+    pickle.dump( log, open( filename, "wb" ) )
+
+# Trim an area regarding the IN and OUT points
+def trim_area(scene, inpoint, outpoint):
+    bpy.ops.sequencer.select_all(action = "SELECT")
+    bpy.context.scene.frame_current = inpoint
+    bpy.ops.sequencer.cut(frame=inpoint, type='SOFT', side='LEFT')
+    bpy.ops.sequencer.delete()
+    bpy.ops.sequencer.select_all(action = "SELECT")
+    bpy.context.scene.frame_current = outpoint
+    bpy.ops.sequencer.cut(frame=outpoint, type='SOFT', side='RIGHT')
+    bpy.ops.sequencer.delete()  
+    bpy.context.scene.frame_current = inpoint
+
 # --- CLASSES ---------------------------------------------------------------------
 
-# Creating the IN/OUT PANEL    
+# Creating the PANEL    
 class iop_panel(bpy.types.Header):     
     bl_space_type = "SEQUENCE_EDITOR"       
     bl_region_type = "UI"          
@@ -286,28 +359,33 @@ class iop_panel(bpy.types.Header):
     def draw(self, context):
         layout = self.layout
         layout.separator()
-        if editing_table_exists():
-            if bpy.context.screen.scene == bpy.data.scenes['Editing table']:
-                row=layout.row()
-                row.operator("sequencer.trim", icon="ARROW_LEFTRIGHT")
-                layout.separator()
-                row.operator("sequencer.setin", icon="TRIA_RIGHT")
-                row.operator("sequencer.setout", icon='TRIA_LEFT')
-                row.operator("sequencer.setinout", icon='FULLSCREEN_EXIT')
-                row.operator("sequencer.addtag", icon='PLUS')
-                row.operator("sequencer.place", icon="PASTEFLIPDOWN")
-                row.prop(context.scene,"meta")
-                row.operator("sequencer.back", icon="LOOP_BACK")
-            else:
-                row=layout.row()
-                row.operator("sequencer.import", icon="ZOOMIN")
-                row.operator("sequencer.trim", icon="ARROW_LEFTRIGHT")
-                row.prop(context.scene,"local_edit")
+        #if scene_exists('Editing table'):
+        if bpy.context.screen.scene == bpy.data.scenes['Editing table']:
+            row=layout.row()
+            row.operator("sequencer.trim", icon="ARROW_LEFTRIGHT")
+            layout.separator()
+            row.operator("sequencer.setin", icon="TRIA_RIGHT")
+            row.operator("sequencer.setout", icon='TRIA_LEFT')
+            row.operator("sequencer.setinout", icon='FULLSCREEN_EXIT')
+            row.operator("sequencer.addtag", icon='PLUS')
+            row.operator("sequencer.place", icon="PASTEFLIPDOWN")
+            row.prop(context.scene,"meta")
+            row.operator("sequencer.back", icon="LOOP_BACK")
+            #else:
+            #    row=layout.row()
+            #    row.operator("sequencer.import", icon="ZOOMIN")
+            #    row.operator("sequencer.trim", icon="ARROW_LEFTRIGHT")
+            #    row.prop(context.scene,"local_edit")
+        elif bpy.context.screen.scene.name.startswith('Tag: ') and main_scene:
+            row=layout.row()
+            #row.operator("sequencer.setinout", icon='FULLSCREEN_EXIT')
+            row.operator("sequencer.place", icon="PASTEFLIPDOWN")
+            row.operator("sequencer.back", icon="LOOP_BACK")
         else:
-                row=layout.row()
-                row.operator("sequencer.import", icon="ZOOMIN")
-                row.operator("sequencer.trim", icon="ARROW_LEFTRIGHT")
-                row.prop(context.scene,"local_edit")
+            row=layout.row()
+            row.operator("sequencer.import", icon="ZOOMIN")
+            row.operator("sequencer.trim", icon="ARROW_LEFTRIGHT")
+            row.prop(context.scene,"local_edit")
 
 # Creating the Place button operator - 2.0
 class OBJECT_OT_Place(bpy.types.Operator):  
@@ -317,50 +395,52 @@ class OBJECT_OT_Place(bpy.types.Operator):
         
     def invoke(self, context, event):
         global main_scene
-        # Save clip meta in the log
-        update_log()
-        
-        # Trim the area
-        inpoint = bpy.data.scenes['Editing table'].frame_start
-        outpoint = bpy.data.scenes['Editing table'].frame_end
-        bpy.ops.sequencer.select_all(action = "SELECT")
-        bpy.context.scene.frame_current = inpoint
-        bpy.ops.sequencer.cut(frame=inpoint, type='SOFT', side='LEFT')
-        bpy.ops.sequencer.delete()
-        bpy.ops.sequencer.select_all(action = "SELECT")
-        bpy.context.scene.frame_current = outpoint
-        bpy.ops.sequencer.cut(frame=outpoint, type='SOFT', side='RIGHT')
-        bpy.ops.sequencer.delete()  
-        bpy.context.scene.frame_current = inpoint
-        
-        if bpy.data.scenes['Editing table'].meta == True:
-            # make metastrip
-            bpy.ops.sequencer.select_all(action = "SELECT")
-            bpy.ops.sequencer.meta_make()
-            bpy.ops.sequencer.select_all(action = "SELECT")
-        else:
-            # select everything except tag strips
-            bpy.ops.sequencer.select_all(action = "DESELECT")
-            for s in context.scene.sequence_editor.sequences_all:
-                if s.type != 'COLOR':
-                    s.select = True
-        
-        
-        
-        bpy.ops.sequencer.copy()
-        #goto_main_scene()
-        bpy.context.screen.scene = main_scene
-        bpy.ops.sequencer.paste()
-        bpy.context.scene.frame_current = bpy.context.scene.frame_current + (outpoint-inpoint)
-        # clean up
-        reset_editing_table()
-        if main_scene.local_edit == False:
-            bpy.context.screen.scene = bpy.data.scenes['Editing table']
-        else:
-            bpy.context.screen.scene = main_scene
+        if main_scene:
+            scene = bpy.context.screen.scene
+            inpoint = scene.frame_start
+            outpoint = scene.frame_end
+            # Editing table context
+            if scene.name == 'Editing table':
+                update_log()
+                trim_area(scene, inpoint, outpoint)
+                if scene.meta == True:
+                    # make metastrip
+                    bpy.ops.sequencer.select_all(action = "SELECT")
+                    bpy.ops.sequencer.meta_make()
+                    bpy.ops.sequencer.select_all(action = "SELECT")
+                else:
+                    # select everything except tag strips
+                    bpy.ops.sequencer.select_all(action = "DESELECT")
+                    for s in context.scene.sequence_editor.sequences_all:
+                        if s.type != 'COLOR':
+                            s.select = True
+                bpy.ops.sequencer.copy()
+                bpy.context.screen.scene = main_scene
+                bpy.ops.sequencer.paste()
+                bpy.context.scene.frame_current = bpy.context.scene.frame_current + (outpoint-inpoint)
+                # clean up
+                reset_editing_table()
+                if main_scene.local_edit == False:
+                    bpy.context.screen.scene = bpy.data.scenes['Editing table']
+                else:
+                    bpy.context.screen.scene = main_scene
+                return {'FINISHED'}
+            # Tag-scene context
+            else :
+                tag_strip = bpy.context.scene.sequence_editor.active_strip
+                inpoint = tag_strip.frame_final_start
+                outpoint = tag_strip.frame_final_end - 1
+                bpy.ops.scene.new(type='FULL_COPY')
+                temp_scene = bpy.context.screen.scene
+                trim_area(temp_scene, inpoint, outpoint)
+                bpy.ops.sequencer.select_all(action = "SELECT")
+                bpy.ops.sequencer.copy()
+                bpy.ops.scene.delete()
+                bpy.context.screen.scene = main_scene
+                bpy.ops.sequencer.paste()
+                bpy.context.scene.frame_current = bpy.context.scene.frame_current + (outpoint-inpoint)
+                return {'FINISHED'}
 
-        
-        return {'FINISHED'}
 
 # Creating the IMPORT button operator - 2.0
 class OBJECT_OT_import(bpy.types.Operator): 
@@ -399,7 +479,7 @@ class OBJECT_OT_import(bpy.types.Operator):
                 if (file_type == "SOUND"):
                     bpy.ops.sequencer.sound_strip_add(frame_start=1, filepath=clip)
                 bpy.context.area.type = original_type
-                #--
+                #-- A OPTIMISER ! cf function 
                 bpy.data.scenes['Editing table'].frame_start = start if start > 0 else 1 
                 bpy.data.scenes['Editing table'].frame_end = end if end >1 else bpy.context.scene.sequence_editor.active_strip.frame_final_duration +1
                 #--  
@@ -500,7 +580,7 @@ class OBJECT_OT_addTag(bpy.types.Operator):
         bpy.ops.sequencer.select_all(action = "DESELECT")
         inpoint = bpy.data.scenes['Editing table'].frame_current
         outpoint = inpoint + 50
-        new_tag_strip(inpoint,outpoint,'new tag')
+        new_tag_strip(inpoint,outpoint,'new-tag')
         return {'FINISHED'}
 
 # creating the SET IN&OUT button operator - 2.0
@@ -511,11 +591,11 @@ class OBJECT_OT_setInOut(bpy.types.Operator):
         
     def invoke(self, context, event):
         tag_strip = bpy.context.scene.sequence_editor.active_strip
+        inpoint = tag_strip.frame_final_start
+        outpoint = tag_strip.frame_final_end
+        bpy.context.screen.scene.frame_start = inpoint
+        bpy.context.screen.scene.frame_end = outpoint
         if bpy.context.screen.scene == bpy.data.scenes['Editing table']:
-            inpoint = tag_strip.frame_start
-            outpoint = tag_strip.frame_final_end
-            bpy.data.scenes['Editing table'].frame_start = inpoint
-            bpy.data.scenes['Editing table'].frame_end = outpoint
             update_clip(clip, inpoint, outpoint)
         return {'FINISHED'}
 
@@ -564,30 +644,58 @@ class OBJECT_OT_Back(bpy.types.Operator):
             goto_main_scene()
         return {'FINISHED'}
 
-# creating the menu "create log file" operator   /disabled/    
+# creating the menu "create log file" operator   
 class SEQUENCER_OT_createlog(bpy.types.Operator):
     bl_idname = "sequencer.createlog"
     bl_label = "Create the log file"
     def execute(self, context):
         #create_the_log_file()
         return {'FINISHED'}
-        
-class SEQUENCER_OT_makewagon(bpy.types.Operator):
-    bl_idname = "sequencer.makewagon"
+
+# creating the tag scene menu operator        
+class SEQUENCER_OT_create_tag_scenes(bpy.types.Operator):
+    bl_idname = "sequencer.createtagtcenes"
     bl_label = "Create the tag scenes"
     def execute(self, context):
-        #make_wagon()
+        create_tag_scenes()
+        return {'FINISHED'}
+
+# creating the create new log file operator
+class SEQUENCER_OT_create_new_log_file(bpy.types.Operator):
+    bl_idname = "sequencer.createnewlogfile"
+    bl_label = "Create a new log file"
+    def execute(self, context):
+        create_new_log_file()
         return {'FINISHED'}
 
 # -- MENU EASY LOGGING ----------------------------------------------------
 
+class EasyLog(bpy.types.Menu):
+    bl_label = "Easy Logging"
+    bl_idname = "OBJECT_MT_easy_log"
+
+    def draw(self, context):
+        layout = self.layout
+
+def draw_item(self, context):
+    layout = self.layout
+    layout.menu(EasyLog.bl_idname)
+'''
+def log_func(self, context):
+    self.layout.operator(SEQUENCER_OT_createlog.bl_idname, text="Create the log file", icon='LINENUMBERS_ON')
+'''                    
+def createTagScene_func(self, context):
+    self.layout.operator(SEQUENCER_OT_create_tag_scenes.bl_idname, text="Build the tag scenes", icon='OOPS')
+
+def createNewLogfile_func(self, context):
+    self.layout.operator(SEQUENCER_OT_create_new_log_file.bl_idname, text="Create a new log file", icon='FILE_SCRIPT')    
 
 
 # -- REGISTRATIONS -----------------------------------------------------
 
 def register():
-    #bpy.utils.register_class(EasyLog)
-    #bpy.types.INFO_HT_header.append(draw_item)
+    bpy.utils.register_class(EasyLog)
+    bpy.types.INFO_HT_header.append(draw_item)
     bpy.utils.register_class(iop_panel)
     bpy.utils.register_class(OBJECT_OT_Trim)
     bpy.utils.register_class(OBJECT_OT_Setin)
@@ -599,14 +707,16 @@ def register():
     #bpy.utils.register_class(SEQUENCER_OT_createlog)
     #bpy.types.OBJECT_MT_easy_log.append(log_func)
     #bpy.utils.register_class(tags_panel)
-    #bpy.types.OBJECT_MT_easy_log.append(wagon_func)
-    #bpy.utils.register_class(SEQUENCER_OT_makewagon)
+    bpy.types.OBJECT_MT_easy_log.append(createTagScene_func)
+    bpy.types.OBJECT_MT_easy_log.append(createNewLogfile_func)
+    bpy.utils.register_class(SEQUENCER_OT_create_tag_scenes)
+    bpy.utils.register_class(SEQUENCER_OT_create_new_log_file)
     bpy.utils.register_class(OBJECT_OT_import)
 
 
 def unregister():
-    #bpy.utils.unregister_class(EasyLog)
-    #bpy.types.INFO_HT_header.remove(draw_item)  
+    bpy.utils.unregister_class(EasyLog)
+    bpy.types.INFO_HT_header.remove(draw_item)  
     bpy.utils.unregister_class(iop_panel)
     bpy.utils.unregister_class(OBJECT_OT_Trim)
     bpy.utils.unregister_class(OBJECT_OT_Setin)
@@ -618,8 +728,10 @@ def unregister():
     #bpy.utils.unregister_class(SEQUENCER_OT_createlog)
     #bpy.types.OBJECT_MT_easy_log.remove(log_func)
     #bpy.utils.unregister_class(tags_panel)
-    #bpy.types.OBJECT_MT_easy_log.remove(wagon_func)
-    #bpy.utils.unregister_class(SEQUENCER_OT_makewagon)
+    bpy.types.OBJECT_MT_easy_log.remove(createTagScene_func)
+    bpy.types.OBJECT_MT_easy_log.remove(createNewLogfile_func)
+    bpy.utils.unregister_class(SEQUENCER_OT_create_tag_scenes)
+    bpy.utils.unregister_class(SEQUENCER_OT_create_new_log_file)
     bpy.utils.unregister_class(OBJECT_OT_import)
 
 
