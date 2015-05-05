@@ -17,7 +17,7 @@
 
 bl_info = {
     "name": "Easy Logging",
-    "author": "Nicolas Priniotakis",
+    "author": "Nicolas Priniotakis (Nikos), David McSween",
     "version": (0,2,0),
     "blender": (2, 7, 4, 0),
     "api": 44539,
@@ -173,7 +173,8 @@ def set_as_main_scene():
 # Set active scene to main
 def goto_main_scene():
     global main_scene
-    bpy.context.screen.scene = main_scene
+    if main_scene and scene_exists(main_scene.name):
+        bpy.context.screen.scene = main_scene
 
 # Create tag strip
 def new_tag_strip(inpoint,outpoint,name):
@@ -213,8 +214,18 @@ def update_log():
     # Update the log file on disk
     update_log_file()
 
+# Cool function written by Leon95
+def header_refresh(self, context):
+    #assign the property to the header theme every time it is redrawn
+    if bpy.context.screen.scene.name == 'Editing table': 
+        bpy.context.user_preferences.themes[0].info.space.header = (0.035,0.591,0.627)
+    elif bpy.context.screen.scene.name.startswith("Tag: "):
+        bpy.context.user_preferences.themes[0].info.space.header = (0.631,0.694,0.318)
+    else:
+        bpy.context.user_preferences.themes[0].info.space.header = (0.447,0.447,0.447)
+
 # Returns the type of the selected element in the browser          
-# This nice function has been written by Björn Sonnenschein 
+# Cool function written by Björn Sonnenschein 
 def detect_strip_type(filepath):
 
     imb_ext_movie = [
@@ -324,7 +335,8 @@ def create_tag_scenes():
             bpy.ops.sequencer.select_all(action = "SELECT")
             bpy.ops.sequencer.view_selected()
     bpy.context.area.type = original_type
-    bpy.context.screen.scene = main_scene
+    #bpy.context.screen.scene = main_scene
+    goto_main_scene()
 
 # Create new log file
 def create_new_log_file():
@@ -416,7 +428,8 @@ class OBJECT_OT_Place(bpy.types.Operator):
                         if s.type != 'COLOR':
                             s.select = True
                 bpy.ops.sequencer.copy()
-                bpy.context.screen.scene = main_scene
+                goto_main_scene()
+                #bpy.context.screen.scene = main_scene
                 bpy.ops.sequencer.paste()
                 bpy.context.scene.frame_current = bpy.context.scene.frame_current + (outpoint-inpoint)
                 # clean up
@@ -424,7 +437,8 @@ class OBJECT_OT_Place(bpy.types.Operator):
                 if main_scene.local_edit == False:
                     bpy.context.screen.scene = bpy.data.scenes['Editing table']
                 else:
-                    bpy.context.screen.scene = main_scene
+                    goto_main_scene()
+                    #bpy.context.screen.scene = main_scene
                 return {'FINISHED'}
             # Tag-scene context
             else :
@@ -437,7 +451,8 @@ class OBJECT_OT_Place(bpy.types.Operator):
                 bpy.ops.sequencer.select_all(action = "SELECT")
                 bpy.ops.sequencer.copy()
                 bpy.ops.scene.delete()
-                bpy.context.screen.scene = main_scene
+                goto_main_scene()
+                #bpy.context.screen.scene = main_scene
                 bpy.ops.sequencer.paste()
                 bpy.context.scene.frame_current = bpy.context.scene.frame_current + (outpoint-inpoint)
                 return {'FINISHED'}
@@ -712,6 +727,15 @@ def register():
     bpy.utils.register_class(SEQUENCER_OT_create_new_log_file)
     bpy.utils.register_class(OBJECT_OT_import)
 
+    bpy.types.Scene.headerColor = bpy.props.FloatVectorProperty(
+                                     name = "Display Color",
+                                     subtype = "COLOR",
+                                     size = 4,
+                                     min = 0.0,
+                                     max = 1.0,
+                                     default = (0.355,0.366,0.57,1.0))
+    bpy.types.INFO_HT_header.append(header_refresh)
+
 
 def unregister():
     bpy.utils.unregister_class(EasyLog)
@@ -729,7 +753,10 @@ def unregister():
     bpy.utils.unregister_class(SEQUENCER_OT_create_tag_scenes)
     bpy.utils.unregister_class(SEQUENCER_OT_create_new_log_file)
     bpy.utils.unregister_class(OBJECT_OT_import)
-
+    
+    bpy.types.INFO_HT_header.remove(header_refresh)
+    bpy.context.user_preferences.themes[0].info.space.header = (0.447,0.447,0.447)
+    del bpy.types.Scene.headerColor
 
 if __name__ == "__main__":
     register()
