@@ -16,9 +16,9 @@
 #  ***** GPL LICENSE BLOCK *****
 
 bl_info = {
-    "name": "Easy Logging",
+    "name": "Easy Logging beta",
     "author": "Nicolas Priniotakis (Nikos), David McSween",
-    "version": (0,2,0),
+    "version": (0,2,1),
     "blender": (2, 7, 4, 0),
     "api": 44539,
     "category": "Sequencer",
@@ -286,11 +286,14 @@ def import_clip(scene,clip,inpoint,outpoint):
     original_type = bpy.context.area.type
     bpy.context.area.type = "SEQUENCE_EDITOR"
     original_scene = bpy.context.screen.scene
-   
     if inpoint < outpoint:
         bpy.context.screen.scene = bpy.data.scenes[scene.name]
         frame = bpy.context.scene.frame_current
-        bpy.ops.sequencer.movie_strip_add(filepath=clip, frame_start=frame)
+        file_type = detect_strip_type(clip)
+        if (file_type == "MOVIE"):
+            bpy.ops.sequencer.movie_strip_add(filepath=clip, frame_start=frame)
+        if (file_type == "SOUND"):
+            bpy.ops.sequencer.sound_strip_add(filepath=clip, frame_start=frame)
         length = outpoint - inpoint 
         for s in bpy.context.selected_sequences:
             s.frame_final_start = frame + inpoint
@@ -412,6 +415,11 @@ class OBJECT_OT_Place(bpy.types.Operator):
             scene = bpy.context.screen.scene
             inpoint = scene.frame_start
             outpoint = scene.frame_end
+
+            if inpoint == outpoint:
+            	outpoint = inpoint + 50
+            	scene.frame_start = inpoint
+            	scene.frame_end = outpoint
             # Editing table context
             if scene.name == 'Editing table':
                 update_log()
@@ -476,42 +484,13 @@ class OBJECT_OT_import(bpy.types.Operator):
         exists,id = clip_exists(clip)
         if exists:
             clip_object = get_clip(clip)
-            start = clip_object[1]
-            end = clip_object[2]
+            inpoint = clip_object[1]
+            outpoint = clip_object[2]
 
             if bpy.context.screen.scene.name != 'Editing table':
                 set_as_main_scene()
-            reset_editing_table()
-
-            bpy.context.screen.scene = bpy.data.scenes['Editing table']
-            if start != -1 and end != -1 :
-                file_type = detect_strip_type(clip)
-                #--
-                original_type = bpy.context.area.type
-                bpy.context.area.type = "SEQUENCE_EDITOR"
-                if (file_type == "MOVIE"):
-                    bpy.ops.sequencer.movie_strip_add(frame_start=1, filepath=clip)
-                if (file_type == "SOUND"):
-                    bpy.ops.sequencer.sound_strip_add(frame_start=1, filepath=clip)
-                bpy.context.area.type = original_type
-                #-- A OPTIMISER ! cf function 
-                bpy.data.scenes['Editing table'].frame_start = start if start > 0 else 1 
-                bpy.data.scenes['Editing table'].frame_end = end if end >1 else bpy.context.scene.sequence_editor.active_strip.frame_final_duration +1
-                #--  
-                bpy.context.scene.frame_current = start
-                bpy.ops.sequencer.cut(frame=start, type='SOFT', side='LEFT')
-                bpy.ops.sequencer.delete()
-                bpy.ops.sequencer.select_all(action = "SELECT")
-                bpy.context.scene.frame_current = end
-                bpy.ops.sequencer.cut(frame=end, type='SOFT', side='RIGHT')
-                bpy.ops.sequencer.delete()
-                #--
-                bpy.context.scene.frame_current = start
-                bpy.ops.sequencer.select_all(action = "SELECT")
-                bpy.ops.sequencer.copy()
-                goto_main_scene()
-                bpy.ops.sequencer.paste()
-                bpy.context.scene.frame_current = bpy.context.scene.frame_current + (end-start)
+            
+            import_clip(main_scene,clip,inpoint,outpoint)
         else:
             bpy.ops.sequencer.movie_strip_add(filepath=clip, frame_start=bpy.context.scene.frame_current)
 
