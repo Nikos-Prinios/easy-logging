@@ -206,7 +206,6 @@ def update_log():
         if not x[0] in new_tag_list:
             remove_tag(clip,x[0])
 
-    # si il n'existe pas dans la liste des color strips : les enlever (prevoir une def remove tag)
     # clip
     inpoint = bpy.data.scenes['Editing table'].frame_start
     outpoint = bpy.data.scenes['Editing table'].frame_end
@@ -310,7 +309,6 @@ def import_clip(scene,clip,inpoint,outpoint):
 # Create the tag scenes
 def create_tag_scenes():
     main_scene = bpy.context.screen.scene
-    # iterate through all the scene and delete those begining by tag:
     for i in bpy.data.scenes:
         if i.name.startswith('Tag: ') :
             bpy.context.screen.scene = i
@@ -338,7 +336,6 @@ def create_tag_scenes():
             bpy.ops.sequencer.select_all(action = "SELECT")
             bpy.ops.sequencer.view_selected()
     bpy.context.area.type = original_type
-    #bpy.context.screen.scene = main_scene
     goto_main_scene()
 
 # Create new log file
@@ -437,7 +434,6 @@ class OBJECT_OT_Place(bpy.types.Operator):
                             s.select = True
                 bpy.ops.sequencer.copy()
                 goto_main_scene()
-                #bpy.context.screen.scene = main_scene
                 bpy.ops.sequencer.paste()
                 bpy.context.scene.frame_current = bpy.context.scene.frame_current + (outpoint-inpoint)
                 # clean up
@@ -446,7 +442,6 @@ class OBJECT_OT_Place(bpy.types.Operator):
                     bpy.context.screen.scene = bpy.data.scenes['Editing table']
                 else:
                     goto_main_scene()
-                    #bpy.context.screen.scene = main_scene
                 return {'FINISHED'}
             # Tag-scene context
             else :
@@ -460,7 +455,6 @@ class OBJECT_OT_Place(bpy.types.Operator):
                 bpy.ops.sequencer.copy()
                 bpy.ops.scene.delete()
                 goto_main_scene()
-                #bpy.context.screen.scene = main_scene
                 bpy.ops.sequencer.paste()
                 bpy.context.scene.frame_current = bpy.context.scene.frame_current + (outpoint-inpoint)
                 return {'FINISHED'}
