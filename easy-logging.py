@@ -362,8 +362,8 @@ def create_new_log_file():
 	filename = 'Easy-Logging-log-file'
 	new_name = filename+' [' + time.strftime("%x") + '].txt'
 	new_name = new_name.replace('/','-')
-	directory = os.path.abspath('~/documents/Easy-logging files')
-	filename = os.path.abspath('~/documents/%s.txt' % filename)
+	directory = os.path.expanduser('~/Easy-logging files')
+	filename = os.path.expanduser('~/%s.txt' % filename)
 	if os.path.isfile(filename):
 		if not os.path.exists(directory):
 			os.makedirs(directory)
