@@ -41,15 +41,16 @@ bpy.types.Scene.local_edit = bpy.props.BoolProperty(name="Local Edit",descriptio
 bpy.types.Scene.meta = bpy.props.BoolProperty(name="As Meta",description="Send trimed clip(s) as a meta strip to the sequencer",default = False)
 
 bad_obj_types = ['CAMERA','LAMP','MESH']
-global clip, clip_object, main_scene, log, fps
+global clip, clip_object, main_scene, log, fps, log_file
 
 # Initialization -----
 # Load the log file
-log_file = "Easy-Logging-log-file.txt"
+log_file = os.path.expanduser('~/%s.txt' % 'Easy-Logging-log-file')
 if os.path.exists(log_file):
 	log = pickle.load( open( log_file, "rb" ) )
 else:
 	log = []
+	open(log_file, 'a').close()
 
 inpoint = 0
 outpoint = 0
@@ -65,9 +66,10 @@ tags = 'none'
 # -----------------------------------------------------------------------
 
 # Update the log file
-def update_log_file():    
-	pickle.dump( log, open( "Easy-Logging-log-file.txt", "wb" ) )
-   
+def update_log_file(): 
+	global log_file   
+	pickle.dump( log, open( log_file, "wb" ) )
+
 # Add a new clip
 def add_clip(clip,inpoint,outpoint):
 	log.append([[clip,inpoint,outpoint]])
@@ -355,16 +357,18 @@ def create_tag_scenes():
 
 # Create new log file
 def create_new_log_file():
+	global log_file
 	log[:] = []
-	filename = 'Easy-Logging-log-file.txt'
-	new_name = filename[:-4]+' [' + time.strftime("%x") + '].txt'
+	filename = 'Easy-Logging-log-file'
+	new_name = filename+' [' + time.strftime("%x") + '].txt'
 	new_name = new_name.replace('/','-')
-	directory = 'Easy-logging files'
+	directory = os.path.abspath('~/documents/Easy-logging files')
+	filename = os.path.abspath('~/documents/%s.txt' % filename)
 	if os.path.isfile(filename):
 		if not os.path.exists(directory):
 			os.makedirs(directory)
 		os.rename(filename,directory + '/' + new_name)
-	pickle.dump( log, open( filename, "wb" ) )
+	update_log_file()
 
 # Trim an area regarding the IN and OUT points
 def trim_area(scene, inpoint, outpoint):
@@ -506,8 +510,6 @@ class OBJECT_OT_import(bpy.types.Operator):
 			except:
 				pass
 
-			
-		
 		return {'FINISHED'}
 
 # Creating the TRIM (EDIT) button operator - 2.0
