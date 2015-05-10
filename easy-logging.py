@@ -316,11 +316,13 @@ def import_clip(scene,clip,inpoint,outpoint,mark):
 			s.frame_final_start = frame + inpoint
 			s.frame_final_end = frame + outpoint
 		bpy.ops.sequencer.snap(frame = bpy.context.scene.frame_current)
+		# create marker - only for tag-scenes
 		if mark :
 			bpy.ops.marker.add()
 			bpy.ops.marker.rename(name=os.path.basename(clip))
 		bpy.context.scene.frame_current += length + 1
-		bpy.context.scene.frame_end = bpy.context.scene.frame_current
+		if mark :
+			bpy.context.scene.frame_end = bpy.context.scene.frame_current
 
 	bpy.context.screen.scene = original_scene
 	bpy.context.area.type = original_type
