@@ -41,16 +41,15 @@ bpy.types.Scene.local_edit = bpy.props.BoolProperty(name="Local Edit",descriptio
 bpy.types.Scene.meta = bpy.props.BoolProperty(name="As Meta",description="Send trimed clip(s) as a meta strip to the sequencer",default = False)
 
 bad_obj_types = ['CAMERA','LAMP','MESH']
-global clip, clip_object, main_scene, log, fps, log_file
+global clip, clip_object, main_scene, log, fps
 
 # Initialization -----
 # Load the log file
-log_file = os.path.expanduser('~/%s.txt' % 'Easy-Logging-log-file')
+log_file = "Easy-Logging-log-file.txt"
 if os.path.exists(log_file):
 	log = pickle.load( open( log_file, "rb" ) )
 else:
 	log = []
-	open(log_file, 'a').close()
 
 inpoint = 0
 outpoint = 0
@@ -66,10 +65,9 @@ tags = 'none'
 # -----------------------------------------------------------------------
 
 # Update the log file
-def update_log_file(): 
-	global log_file   
-	pickle.dump( log, open( log_file, "wb" ) )
-
+def update_log_file():    
+	pickle.dump( log, open( "Easy-Logging-log-file.txt", "wb" ) )
+   
 # Add a new clip
 def add_clip(clip,inpoint,outpoint):
 	log.append([[clip,inpoint,outpoint]])
@@ -203,13 +201,17 @@ def update_log():
 	global clip, log
 	# tags
 	new_tag_list = []
-	for s in bpy.context.scene.sequence_editor.sequences_all:
-		if s.type == 'COLOR':
-			new_tag_list.append(s.name)
-			tag = s.name
-			inpoint = s.frame_start
-			outpoint = s.frame_final_end
-			update_tag(clip,tag,inpoint,outpoint)
+	# try - in case there's nothing on the tables
+	try:
+		for s in bpy.context.scene.sequence_editor.sequences_all:
+			if s.type == 'COLOR':
+				new_tag_list.append(s.name)
+				tag = s.name
+				inpoint = s.frame_start
+				outpoint = s.frame_final_end
+				update_tag(clip,tag,inpoint,outpoint)
+	except:
+		pass
 	# delete removed tags
 	old_tag_list = tag_list(clip)
 	for x in old_tag_list:
@@ -357,18 +359,16 @@ def create_tag_scenes():
 
 # Create new log file
 def create_new_log_file():
-	global log_file
 	log[:] = []
-	filename = 'Easy-Logging-log-file'
-	new_name = filename+' [' + time.strftime("%x") + '].txt'
+	filename = 'Easy-Logging-log-file.txt'
+	new_name = filename[:-4]+' [' + time.strftime("%x") + '].txt'
 	new_name = new_name.replace('/','-')
-	directory = os.path.expanduser('~/Easy-logging files')
-	filename = os.path.expanduser('~/%s.txt' % filename)
+	directory = 'Easy-logging files'
 	if os.path.isfile(filename):
 		if not os.path.exists(directory):
 			os.makedirs(directory)
 		os.rename(filename,directory + '/' + new_name)
-	update_log_file()
+	pickle.dump( log, open( filename, "wb" ) )
 
 # Trim an area regarding the IN and OUT points
 def trim_area(scene, inpoint, outpoint):
@@ -510,6 +510,8 @@ class OBJECT_OT_import(bpy.types.Operator):
 			except:
 				pass
 
+			
+		
 		return {'FINISHED'}
 
 # Creating the TRIM (EDIT) button operator - 2.0
