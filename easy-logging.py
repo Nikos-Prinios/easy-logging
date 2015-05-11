@@ -27,7 +27,7 @@ bl_info = {
 	"warning": "",
 	"wiki_url": "",
 	"tracker_url": "",}
-
+# -- 11/05/2015
 # -- IMPORT ------------------------------------------------------------
 import bpy, random, time, os
 import pickle, time
@@ -45,11 +45,13 @@ global clip, clip_object, main_scene, log, fps
 
 # Initialization -----
 # Load the log file
-log_file = "Easy-Logging-log-file.txt"
+# Load the log file
+log_file = os.path.expanduser('~/%s.txt' % 'Easy-Logging-log-file')
 if os.path.exists(log_file):
 	log = pickle.load( open( log_file, "rb" ) )
 else:
 	log = []
+	open(log_file, 'a').close()
 
 inpoint = 0
 outpoint = 0
@@ -66,7 +68,8 @@ tags = 'none'
 
 # Update the log file
 def update_log_file():    
-	pickle.dump( log, open( "Easy-Logging-log-file.txt", "wb" ) )
+	global log_file   
+	pickle.dump( log, open( log_file, "wb" ) )
    
 # Add a new clip
 def add_clip(clip,inpoint,outpoint):
@@ -361,16 +364,18 @@ def create_tag_scenes():
 
 # Create new log file
 def create_new_log_file():
+	global log_file
 	log[:] = []
-	filename = 'Easy-Logging-log-file.txt'
-	new_name = filename[:-4]+' [' + time.strftime("%x") + '].txt'
+	filename = 'Easy-Logging-log-file'
+	new_name = filename+' [' + time.strftime("%x") + '].txt'
 	new_name = new_name.replace('/','-')
-	directory = 'Easy-logging files'
+	directory = os.path.expanduser('~/Easy-logging files')
+	filename = os.path.expanduser('~/%s.txt' % filename)
 	if os.path.isfile(filename):
 		if not os.path.exists(directory):
 			os.makedirs(directory)
 		os.rename(filename,directory + '/' + new_name)
-	pickle.dump( log, open( filename, "wb" ) )
+	update_log_file()
 
 # Trim an area regarding the IN and OUT points
 def trim_area(scene, inpoint, outpoint):
