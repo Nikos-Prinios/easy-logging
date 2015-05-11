@@ -203,16 +203,13 @@ def update_log():
 	global clip, log
 	# tags
 	new_tag_list = []
-	try:
-		for s in bpy.context.scene.sequence_editor.sequences_all:
-			if s.type == 'COLOR':
-				new_tag_list.append(s.name)
-				tag = s.name
-				inpoint = s.frame_start
-				outpoint = s.frame_final_end
-				update_tag(clip,tag,inpoint,outpoint)
-	except:
-		pass
+	for s in bpy.context.scene.sequence_editor.sequences_all:
+		if s.type == 'COLOR':
+			new_tag_list.append(s.name)
+			tag = s.name
+			inpoint = s.frame_start
+			outpoint = s.frame_final_end
+			update_tag(clip,tag,inpoint,outpoint)
 	# delete removed tags
 	old_tag_list = tag_list(clip)
 	for x in old_tag_list:
