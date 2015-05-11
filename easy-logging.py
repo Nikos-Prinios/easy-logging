@@ -27,7 +27,7 @@ bl_info = {
 	"warning": "",
 	"wiki_url": "",
 	"tracker_url": "",}
-# -- 11/05/2015
+
 # -- IMPORT ------------------------------------------------------------
 import bpy, random, time, os
 import pickle, time
@@ -41,10 +41,9 @@ bpy.types.Scene.local_edit = bpy.props.BoolProperty(name="Local Edit",descriptio
 bpy.types.Scene.meta = bpy.props.BoolProperty(name="As Meta",description="Send trimed clip(s) as a meta strip to the sequencer",default = False)
 
 bad_obj_types = ['CAMERA','LAMP','MESH']
-global clip, clip_object, main_scene, log, fps
+global clip, clip_object, main_scene, log, fps, log_file
 
 # Initialization -----
-# Load the log file
 # Load the log file
 log_file = os.path.expanduser('~/%s.txt' % 'Easy-Logging-log-file')
 if os.path.exists(log_file):
@@ -67,10 +66,10 @@ tags = 'none'
 # -----------------------------------------------------------------------
 
 # Update the log file
-def update_log_file():    
+def update_log_file(): 
 	global log_file   
 	pickle.dump( log, open( log_file, "wb" ) )
-   
+
 # Add a new clip
 def add_clip(clip,inpoint,outpoint):
 	log.append([[clip,inpoint,outpoint]])
@@ -204,17 +203,13 @@ def update_log():
 	global clip, log
 	# tags
 	new_tag_list = []
-	# try - in case there's nothing on the tables
-	try:
-		for s in bpy.context.scene.sequence_editor.sequences_all:
-			if s.type == 'COLOR':
-				new_tag_list.append(s.name)
-				tag = s.name
-				inpoint = s.frame_start
-				outpoint = s.frame_final_end
-				update_tag(clip,tag,inpoint,outpoint)
-	except:
-		pass
+	for s in bpy.context.scene.sequence_editor.sequences_all:
+		if s.type == 'COLOR':
+			new_tag_list.append(s.name)
+			tag = s.name
+			inpoint = s.frame_start
+			outpoint = s.frame_final_end
+			update_tag(clip,tag,inpoint,outpoint)
 	# delete removed tags
 	old_tag_list = tag_list(clip)
 	for x in old_tag_list:
@@ -319,13 +314,11 @@ def import_clip(scene,clip,inpoint,outpoint,mark):
 			s.frame_final_start = frame + inpoint
 			s.frame_final_end = frame + outpoint
 		bpy.ops.sequencer.snap(frame = bpy.context.scene.frame_current)
-		# create marker - only for tag-scenes
 		if mark :
 			bpy.ops.marker.add()
 			bpy.ops.marker.rename(name=os.path.basename(clip))
 		bpy.context.scene.frame_current += length + 1
-		if mark :
-			bpy.context.scene.frame_end = bpy.context.scene.frame_current
+		bpy.context.scene.frame_end = bpy.context.scene.frame_current
 
 	bpy.context.screen.scene = original_scene
 	bpy.context.area.type = original_type
@@ -517,8 +510,6 @@ class OBJECT_OT_import(bpy.types.Operator):
 			except:
 				pass
 
-			
-		
 		return {'FINISHED'}
 
 # Creating the TRIM (EDIT) button operator - 2.0
