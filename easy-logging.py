@@ -464,6 +464,7 @@ class OBJECT_OT_Place(bpy.types.Operator):
 				if main_scene.local_edit == False:
 					bpy.context.screen.scene = bpy.data.scenes['Editing table']
 				else:
+					bpy.ops.sequencer.view_selected()
 					goto_main_scene()
 				return {'FINISHED'}
 			# Tag-scene context
@@ -480,6 +481,7 @@ class OBJECT_OT_Place(bpy.types.Operator):
 				goto_main_scene()
 				bpy.ops.sequencer.paste()
 				bpy.context.scene.frame_current = bpy.context.scene.frame_current + (outpoint-inpoint)
+				bpy.ops.sequencer.view_selected()
 				return {'FINISHED'}
 
 # Creating the IMPORT button operator - 2.0
