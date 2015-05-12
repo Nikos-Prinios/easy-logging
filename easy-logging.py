@@ -30,7 +30,7 @@ bl_info = {
 
 # -- IMPORT ------------------------------------------------------------
 import bpy, random, time, os
-import pickle, time
+import pickle, time, getpass
 
 
 # -- Custom Properties & VARIABLES -------------------------------------
@@ -44,13 +44,22 @@ bad_obj_types = ['CAMERA','LAMP','MESH']
 global clip, clip_object, main_scene, log, fps, log_file
 
 # Initialization -----
-# Load the log file
+# Load the log file, check and eventually exchange metadara's username
+
 log_file = os.path.expanduser('~/%s.txt' % 'Easy-Logging-log-file')
 if os.path.exists(log_file):
 	log = pickle.load( open( log_file, "rb" ) )
 else:
 	log = []
 	open(log_file, 'a').close()
+
+if len(log) > 0:
+	me = getpass.getuser()
+	string = (log[0][0][0])
+	begin = string[string.find('/',string.find('/')+1)+1:]
+	original_user = begin[:begin.find('/')]
+	for i, s in enumerate(log):
+		log[i][0][0] = s[0][0].replace(original_user, me,1)
 
 inpoint = 0
 outpoint = 0
