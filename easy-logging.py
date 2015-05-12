@@ -58,8 +58,10 @@ if len(log) > 0:
 	string = (log[0][0][0])
 	begin = string[string.find('/',string.find('/')+1)+1:]
 	original_user = begin[:begin.find('/')]
-	for i, s in enumerate(log):
-		log[i][0][0] = s[0][0].replace(original_user, me,1)
+	if original_user != me:
+		for i, s in enumerate(log):
+			log[i][0][0] = s[0][0].replace(original_user, me,1)
+
 
 inpoint = 0
 outpoint = 0
