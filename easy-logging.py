@@ -320,7 +320,7 @@ def import_clip(scene,clip,inpoint,outpoint,mark):
 		if mark :
 			bpy.ops.marker.add()
 			bpy.ops.marker.rename(name=os.path.basename(clip))
-		bpy.context.scene.frame_current += length + 1
+		bpy.context.scene.frame_current += length
 		bpy.context.scene.frame_end = bpy.context.scene.frame_current
 
 	bpy.context.screen.scene = original_scene
