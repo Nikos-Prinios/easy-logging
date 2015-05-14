@@ -1,4 +1,4 @@
-#  ***** GPL LICENSE BLOCK ***** NOT FUNCTIONNAL BRANCH
+#  ***** GPL LICENSE BLOCK ***** DEV BRANCH
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -58,9 +58,14 @@ if len(log) > 0:
 	string = (log[0][0][0])
 	begin = string[string.find('/',string.find('/')+1)+1:]
 	original_user = begin[:begin.find('/')]
+	
 	if original_user != me:
 		for i, s in enumerate(log):
-			log[i][0][0] = s[0][0].replace(original_user, me,1)
+			drive, path = os.path.splitdrive(s[0][0])
+			log[i][0][0] = path.replace(original_user, me,1)
+			# split ?
+		#	new path = os.path.expanduser('~') + [x.find('nikos')+5:]
+	
 
 
 inpoint = 0
