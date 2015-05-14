@@ -18,7 +18,7 @@
 bl_info = {
 	"name": "Easy Logging beta",
 	"author": "Nicolas Priniotakis (Nikos), David McSween",
-	"version": (0,2,1),
+	"version": (0,2,1,0),
 	"blender": (2, 7, 4, 0),
 	"api": 44539,
 	"category": "Sequencer",
@@ -41,36 +41,31 @@ bpy.types.Scene.local_edit = bpy.props.BoolProperty(name="Local Edit",descriptio
 bpy.types.Scene.meta = bpy.props.BoolProperty(name="As Meta",description="Send trimed clip(s) as a meta strip to the sequencer",default = False)
 
 bad_obj_types = ['CAMERA','LAMP','MESH']
-global clip, clip_object, main_scene, log, fps, log_file
+global clip, clip_object, main_scene, log, fps, log_file, me
 
-# Initialization -----
-# Load the log file, check and eventually exchange metadara's username
-
-log_file = os.path.expanduser('~/%s.txt' % 'Easy-Logging-log-file')
-if os.path.exists(log_file):
-	log = pickle.load( open( log_file, "rb" ) )
-else:
-	log = []
-	open(log_file, 'a').close()
-
-if len(log) > 0:
-	me = getpass.getuser()
-	string = (log[0][0][0])
-	begin = string[string.find('/',string.find('/')+1)+1:]
-	original_user = begin[:begin.find('/')]
-	
-	if original_user != me:
-		for i, s in enumerate(log):
-			drive, path = os.path.splitdrive(s[0][0])
-			log[i][0][0] = path.replace(original_user, me,1)
-			# split ?
-		#	new path = os.path.expanduser('~') + [x.find('nikos')+5:]
-	
-
+# Initialization ---------------------------------------------------------
 
 inpoint = 0
 outpoint = 0
 tags = 'none'
+
+# Load the log file, update username and home's path if needed
+
+me = os.path.expanduser('~/')
+log_file = os.path.expanduser('~/%s.txt' % 'Easy-Logging-log-file')
+if os.path.exists(log_file):
+	home,log = pickle.load( open( log_file, "rb" ) )
+	if not me == home:
+		for i, s in enumerate(log):
+			drive, path = os.path.splitdrive(log[i][0][0])
+			try:
+				log[i][0][0] = drive + path.replace(home,me,1)
+			except:
+				pass
+else:
+	home = me
+	log = []
+	open(log_file, 'a').close()
 
 
 # -- FUNCTIONS - 2.0 ----------------------------------------------------
@@ -83,8 +78,8 @@ tags = 'none'
 
 # Update the log file
 def update_log_file(): 
-	global log_file   
-	pickle.dump( log, open( log_file, "wb" ) )
+	global log_file, me
+	pickle.dump( (me,log), open( log_file, "wb" ) )
 
 # Add a new clip
 def add_clip(clip,inpoint,outpoint):
