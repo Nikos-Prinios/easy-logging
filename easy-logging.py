@@ -1,4 +1,4 @@
-#  ***** GPL LICENSE BLOCK *****
+#  ***** GPL LICENSE BLOCK ***** NOT FUNCTIONNAL BRANCH
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
