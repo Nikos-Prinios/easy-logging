@@ -1,3 +1,4 @@
+#                                                        May 15th 2015
 #  ***** GPL LICENSE BLOCK ***** DEV BRANCH
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -30,8 +31,8 @@ bl_info = {
 
 # -- IMPORT ------------------------------------------------------------
 import bpy, random, time, os
-import pickle, time, getpass
-
+import pickle, time, getpass, re, platform
+from string import ascii_uppercase
 
 # -- Custom Properties & VARIABLES -------------------------------------
 bpy.types.Object.tags = bpy.props.StringProperty()    
@@ -50,20 +51,19 @@ outpoint = 0
 tags = 'none'
 
 # Load the log file, update username and home's path if needed
-
-me = os.path.expanduser('~/')
+me = getpass.getuser()
+my_os = platform.system()
 log_file = os.path.expanduser('~/%s.txt' % 'Easy-Logging-log-file')
 if os.path.exists(log_file):
-	home,log = pickle.load( open( log_file, "rb" ) )
-	if not me == home:
+	user,log = pickle.load( open( log_file, "rb" ) )
+	if not me == user:
 		for i, s in enumerate(log):
-			drive, path = os.path.splitdrive(log[i][0][0])
 			try:
-				log[i][0][0] = drive + path.replace(home,me,1)
+				log[i][0][0] = convert_path(user, s)
 			except:
 				pass
 else:
-	home = me
+	user = me
 	log = []
 	open(log_file, 'a').close()
 
@@ -76,10 +76,62 @@ else:
 # outpoint - for either a clip or a tag
 # -----------------------------------------------------------------------
 
+
+def convert_path(original_user, me, path):
+	
+	# case windows
+	path_ini = 'C:/Users/' + original_user + '/'
+	if path.startswith(path_ini):
+		file_path = path[len(path_ini):]
+		new_path = os.path.expanduser('~') + '/' + file_path
+		return new_path
+
+	# Case osx
+	path_ini = '/Users/' + original_user + '/'
+	path_vol = '/Volumes/'
+	
+	if path.startswith(path_ini):
+		file_path = path[len(path_ini):]
+		new_path = os.path.expanduser('~') + '/' + file_path
+		return new_path
+
+	elif path.startswith(path_vol):
+		if 'Linux' in my_os :
+			return path.replace('Volumes/','media/' + me + '/')
+		elif 'Darwin' in my_os :
+			return path.replace(original_user,me,1)
+	else:
+		return path
+
+		'''elif my_os == 'Windows':
+			for c in ascii_uppercase:
+				file_path = c + ':/' + path[[m.start() for m in re.finditer(r"/",path)][2]+1:]
+				if os.path.isfile(file_path):
+					return file_path
+		'''
+	# Case linux
+	path_ini = '/home/' + original_user + '/'
+	path_vol = '/media/'+ original_user + '/'
+	
+	if path.startswith(path_ini):
+		file_path = path[len(path_ini):]
+		new_path = os.path.expanduser('~') + '/' + file_path
+		return new_path
+	
+	elif path.startswith(path_vol):
+		if 'Linux' in my_os :
+			return path.replace(original_user,me)
+		elif 'Darwin' in my_os :
+			return path.replace(path_vol, '/Volumes/',1)
+	else:
+		return path
+
+
+
 # Update the log file
 def update_log_file(): 
 	global log_file, me
-	pickle.dump( (me,log), open( log_file, "wb" ) )
+	pickle.dump((me,log), open( log_file, "wb" ) )
 
 # Add a new clip
 def add_clip(clip,inpoint,outpoint):
