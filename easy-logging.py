@@ -1,4 +1,5 @@
-#  ***** GPL LICENSE BLOCK *****
+#                                                        May 16th 2015
+#  ***** GPL LICENSE BLOCK ***** DEV BRANCH
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,7 +19,7 @@
 bl_info = {
 	"name": "Easy Logging beta",
 	"author": "Nicolas Priniotakis (Nikos), David McSween",
-	"version": (0,2,1),
+	"version": (0,2,1,0),
 	"blender": (2, 7, 4, 0),
 	"api": 44539,
 	"category": "Sequencer",
@@ -30,8 +31,8 @@ bl_info = {
 
 # -- IMPORT ------------------------------------------------------------
 import bpy, random, time, os
-import pickle, time, getpass
-
+import pickle, time, getpass, re, platform
+from string import ascii_uppercase
 
 # -- Custom Properties & VARIABLES -------------------------------------
 bpy.types.Object.tags = bpy.props.StringProperty()    
@@ -41,31 +42,8 @@ bpy.types.Scene.local_edit = bpy.props.BoolProperty(name="Local Edit",descriptio
 bpy.types.Scene.meta = bpy.props.BoolProperty(name="As Meta",description="Send trimed clip(s) as a meta strip to the sequencer",default = False)
 
 bad_obj_types = ['CAMERA','LAMP','MESH']
-global clip, clip_object, main_scene, log, fps, log_file
+global clip, clip_object, main_scene, log, fps, log_file, me
 
-# Initialization -----
-# Load the log file, check and eventually exchange metadara's username
-
-log_file = os.path.expanduser('~/%s.txt' % 'Easy-Logging-log-file')
-if os.path.exists(log_file):
-	log = pickle.load( open( log_file, "rb" ) )
-else:
-	log = []
-	open(log_file, 'a').close()
-
-if len(log) > 0:
-	me = getpass.getuser()
-	string = (log[0][0][0])
-	begin = string[string.find('/',string.find('/')+1)+1:]
-	original_user = begin[:begin.find('/')]
-	if original_user != me:
-		for i, s in enumerate(log):
-			log[i][0][0] = s[0][0].replace(original_user, me,1)
-
-
-inpoint = 0
-outpoint = 0
-tags = 'none'
 
 
 # -- FUNCTIONS - 2.0 ----------------------------------------------------
@@ -76,10 +54,67 @@ tags = 'none'
 # outpoint - for either a clip or a tag
 # -----------------------------------------------------------------------
 
+
+def convert_path(original_user, me, path):
+	# case windows
+	path_ini = 'C:\\Users\\' + original_user + '\\'
+	if path.startswith(path_ini):
+		file_path = path[len(path_ini):]
+		if 'Win' in my_os :
+			new_path = os.path.expanduser('~') + '\\' + file_path
+			return new_path
+		else :
+			file_path = file_path.replace('\\','/')
+			new_path = os.path.expanduser('~') + '/' + file_path
+			return new_path
+
+	# Case osx
+	path_ini = '/Users/' + original_user + '/'
+	path_vol = '/Volumes/'
+	
+	if path.startswith(path_ini):
+		file_path = path[len(path_ini):]
+		if 'Win' in my_os :
+			file_path = file_path.replace('/','\\')
+			new_path = os.path.expanduser('~') + '\\' + file_path
+			return new_path
+		else :
+			new_path = os.path.expanduser('~') + '/' + file_path
+			return new_path
+
+	elif path.startswith(path_vol):
+		if 'Linux' in my_os :
+			return path.replace('Volumes/','media/' + me + '/')
+		elif 'Darwin' in my_os :
+			return path.replace(original_user,me,1)
+	
+	# Case linux
+	path_ini = '/home/' + original_user + '/'
+	path_vol = '/media/'+ original_user + '/'
+	
+	if path.startswith(path_ini):
+		file_path = path[len(path_ini):]
+		if 'Win' in my_os :
+			file_path = file_path.replace('/','\\')
+			new_path = os.path.expanduser('~') + '\\' + file_path
+			return new_path
+		else :
+			new_path = os.path.expanduser('~') + '/' + file_path
+			return new_path
+	
+	elif path.startswith(path_vol):
+		if 'Linux' in my_os :
+			return path.replace(original_user,me)
+		elif 'Darwin' in my_os :
+			return path.replace(path_vol, '/Volumes/',1)
+	else:
+		return path
+
 # Update the log file
 def update_log_file(): 
-	global log_file   
-	pickle.dump( log, open( log_file, "wb" ) )
+	global log_file, log, me
+	pickle.dump((me,log), open( log_file, "wb" ) )
+	print("Log updated and recorded.")
 
 # Add a new clip
 def add_clip(clip,inpoint,outpoint):
@@ -375,10 +410,10 @@ def create_new_log_file():
 	global log_file
 	log[:] = []
 	filename = 'Easy-Logging-log-file'
-	new_name = filename+' [' + time.strftime("%x") + '].txt'
+	new_name = filename+' [' + time.strftime("%x") + '].ez'
 	new_name = new_name.replace('/','-')
 	directory = os.path.expanduser('~/Easy-logging files')
-	filename = os.path.expanduser('~/%s.txt' % filename)
+	filename = os.path.expanduser('~/%s.ez' % filename)
 	if os.path.isfile(filename):
 		if not os.path.exists(directory):
 			os.makedirs(directory)
@@ -396,6 +431,33 @@ def trim_area(scene, inpoint, outpoint):
 	bpy.ops.sequencer.cut(frame=outpoint, type='SOFT', side='RIGHT')
 	bpy.ops.sequencer.delete()  
 	bpy.context.scene.frame_current = inpoint
+
+# Initialization ---------------------------------------------------------
+
+inpoint = 0
+outpoint = 0
+tags = 'none'
+
+# Load the log file, update username and paths if needed
+me = getpass.getuser()
+my_os = platform.system()
+log_file = os.path.expanduser('~/%s.ez' % 'Easy-Logging-log-file')
+if os.path.exists(log_file):
+	user,log = pickle.load( open( log_file, "rb" ) )
+	print(user)
+	print(log)
+	if not me == user:
+		print('Converting the path of imported logged files...')
+		for i, s in enumerate(log):
+			new_path = convert_path(user, me, s[0][0])
+			print(str(i) + ') ' + s[0][0] + ' --> ' + new_path)
+			log[i][0][0] = new_path
+		update_log_file()
+else:
+	user = me
+	log = []
+	open(log_file, 'a').close()
+
 
 # --- CLASSES ---------------------------------------------------------------------
 
