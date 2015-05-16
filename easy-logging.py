@@ -67,11 +67,9 @@ def convert_path(original_user, me, path):
 			file_path = file_path.replace('\\','/')
 			new_path = os.path.expanduser('~') + '/' + file_path
 			return new_path
-
 	# Case osx
 	path_ini = '/Users/' + original_user + '/'
 	path_vol = '/Volumes/'
-	
 	if path.startswith(path_ini):
 		file_path = path[len(path_ini):]
 		if 'Win' in my_os :
@@ -81,17 +79,14 @@ def convert_path(original_user, me, path):
 		else :
 			new_path = os.path.expanduser('~') + '/' + file_path
 			return new_path
-
 	elif path.startswith(path_vol):
 		if 'Linux' in my_os :
 			return path.replace('Volumes/','media/' + me + '/')
 		elif 'Darwin' in my_os :
 			return path.replace(original_user,me,1)
-	
 	# Case linux
 	path_ini = '/home/' + original_user + '/'
 	path_vol = '/media/'+ original_user + '/'
-	
 	if path.startswith(path_ini):
 		file_path = path[len(path_ini):]
 		if 'Win' in my_os :
@@ -101,7 +96,6 @@ def convert_path(original_user, me, path):
 		else :
 			new_path = os.path.expanduser('~') + '/' + file_path
 			return new_path
-	
 	elif path.startswith(path_vol):
 		if 'Linux' in my_os :
 			return path.replace(original_user,me)
