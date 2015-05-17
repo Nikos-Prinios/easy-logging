@@ -1,5 +1,5 @@
 # easy-logging
-A footage logging system for Blender VSE
+A footage logging system for Blender VSE <br>
 Download and manual : easy-logging.net
 # What can it do ?
 Derushing tons of footage, adding tags, 3-point editing.
