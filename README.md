@@ -21,7 +21,7 @@ FROM THE EDITING TABLE
 - <b>place :</b> places the logged clip back to your main sequence
 - <b>as meta :</b> ask for the clip to be packed as a metastrip (in case you added some other element in the editing table)
 - <b>back to sequence :</b> brings you back to the main sequence
-- 
+
 FROM THE MENU
 - <b>Build tag-scenes :</b> Create one scene for each tag with all the related video pieces inside
 - <b>Delete the tag-scenes :</b> Remove all the tag-scenes
