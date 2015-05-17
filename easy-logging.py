@@ -1,4 +1,4 @@
-#                                                        May 16th 2015
+#                                                        May 15th 2015
 #  ***** GPL LICENSE BLOCK ***** DEV BRANCH
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -30,8 +30,8 @@ bl_info = {
 	"tracker_url": "",}
 
 # -- IMPORT ------------------------------------------------------------
-import bpy, random, time, os
-import pickle, time, getpass, re, platform
+import bpy, random, time, os, ntpath, getpass
+import pickle, time, re, platform
 from string import ascii_uppercase
 
 # -- Custom Properties & VARIABLES -------------------------------------
@@ -54,6 +54,11 @@ global clip, clip_object, main_scene, log, fps, log_file, me
 # outpoint - for either a clip or a tag
 # -----------------------------------------------------------------------
 
+# Check if the path is already registered and add it if not
+def add_path(path):
+	global path_list
+	path_list.add(path)
+	print (path_list)
 
 def convert_path(original_user, me, path):
 	# case windows
@@ -67,9 +72,11 @@ def convert_path(original_user, me, path):
 			file_path = file_path.replace('\\','/')
 			new_path = os.path.expanduser('~') + '/' + file_path
 			return new_path
+
 	# Case osx
 	path_ini = '/Users/' + original_user + '/'
 	path_vol = '/Volumes/'
+	
 	if path.startswith(path_ini):
 		file_path = path[len(path_ini):]
 		if 'Win' in my_os :
@@ -79,14 +86,17 @@ def convert_path(original_user, me, path):
 		else :
 			new_path = os.path.expanduser('~') + '/' + file_path
 			return new_path
+
 	elif path.startswith(path_vol):
 		if 'Linux' in my_os :
 			return path.replace('Volumes/','media/' + me + '/')
 		elif 'Darwin' in my_os :
 			return path.replace(original_user,me,1)
+	
 	# Case linux
 	path_ini = '/home/' + original_user + '/'
 	path_vol = '/media/'+ original_user + '/'
+	
 	if path.startswith(path_ini):
 		file_path = path[len(path_ini):]
 		if 'Win' in my_os :
@@ -96,6 +106,7 @@ def convert_path(original_user, me, path):
 		else :
 			new_path = os.path.expanduser('~') + '/' + file_path
 			return new_path
+	
 	elif path.startswith(path_vol):
 		if 'Linux' in my_os :
 			return path.replace(original_user,me)
@@ -106,13 +117,20 @@ def convert_path(original_user, me, path):
 
 # Update the log file
 def update_log_file(): 
-	global log_file, log, me
-	pickle.dump((me,log), open( log_file, "wb" ) )
-	print("Log updated and recorded.")
+	global log_file, log, path_list, user
+	pickle.dump((path_list, user, log), open( log_file, "wb" ) )
+
+# extract the filename from a path
+def filename(path):
+    head, tail = ntpath.split(path)
+    return tail or ntpath.basename(head)
 
 # Add a new clip
 def add_clip(clip,inpoint,outpoint):
-	log.append([[clip,inpoint,outpoint]])
+	size = os.path.getsize(clip)
+	clip_name = filename(clip) + '#' + str(size)
+	print (clip_name)
+	log.append([[clip_name,inpoint,outpoint]])
 
 # Add tag to a referenced clip
 def add_tag(clip,name,inpoint,outpoint):
@@ -125,8 +143,10 @@ def add_tag(clip,name,inpoint,outpoint):
  
 # Check if a clip is already referenced and return its id
 def clip_exists(clip):
+	size = os.path.getsize(clip)
+	f = filename(clip) + '#' + str(size)
 	for x in log:
-		if clip in x[0]:
+		if f in x[0][0]:
 			return (True,log.index(x))
 	return (False, -1)
 
@@ -167,7 +187,7 @@ def tag_list(clip):
 	if exists:
 		for y in log[id][1:]:
 			tags.append([y[0],y[1],y[2]])
-		return tags
+	return tags
 
 # Remove a tag from a clip
 def remove_tag(clip, tag):
@@ -322,8 +342,12 @@ def detect_strip_type(filepath):
 	".aiff",
 	".m4a",
 	]
-
-	extension = os.path.splitext(filepath)[1]
+	
+	if '#' in filepath :
+		extension = filepath.split('#')[0]
+		extension = '.' + extension.split('.')[1]
+	else :
+		extension = os.path.splitext(filepath)[1]
 	extension = extension.lower()
 	if extension in imb_ext_movie:
 		type = 'MOVIE'
@@ -335,6 +359,7 @@ def detect_strip_type(filepath):
 
 # import a trimed clip into a scene
 def import_clip(scene,clip,inpoint,outpoint,mark):
+	global path_list
 	original_type = bpy.context.area.type
 	bpy.context.area.type = "SEQUENCE_EDITOR"
 	original_scene = bpy.context.screen.scene
@@ -342,16 +367,32 @@ def import_clip(scene,clip,inpoint,outpoint,mark):
 		bpy.context.screen.scene = bpy.data.scenes[scene.name]
 		frame = bpy.context.scene.frame_current
 		file_type = detect_strip_type(clip)
-		if (file_type == "MOVIE"):
-			try:
-				bpy.ops.sequencer.movie_strip_add(filepath=clip, frame_start=frame)
-			except:
-				pass
-		if (file_type == "SOUND"):
-			try:
-				bpy.ops.sequencer.sound_strip_add(filepath=clip, frame_start=frame)
-			except:
-				pass
+		if mark:
+			for s in path_list:
+				filepath = s + clip.split('#')[0]
+				if os.path.isfile(filepath):
+					if (file_type == "MOVIE"):
+						try:
+							bpy.ops.sequencer.movie_strip_add(filepath=filepath, frame_start=frame)
+						except:
+							pass
+					elif (file_type == "SOUND"):
+						try:
+							bpy.ops.sequencer.sound_strip_add(filepath=filepath, frame_start=frame)
+						except:
+							pass
+		else :
+			if (file_type == "MOVIE"):
+				try:
+					bpy.ops.sequencer.movie_strip_add(filepath=clip, frame_start=frame)
+				except:
+					pass
+			if (file_type == "SOUND"):
+				try:
+					bpy.ops.sequencer.sound_strip_add(filepath=clip, frame_start=frame)
+				except:
+					pass
+
 		length = outpoint - inpoint 
 		for s in bpy.context.selected_sequences:
 			s.frame_final_start = frame + inpoint
@@ -359,7 +400,7 @@ def import_clip(scene,clip,inpoint,outpoint,mark):
 		bpy.ops.sequencer.snap(frame = bpy.context.scene.frame_current)
 		if mark :
 			bpy.ops.marker.add()
-			bpy.ops.marker.rename(name=os.path.basename(clip))
+			bpy.ops.marker.rename(name=os.path.basename(clip).split('#')[0])
 		bpy.context.scene.frame_current += length
 		if mark :
 			bpy.context.scene.frame_end = bpy.context.scene.frame_current
@@ -394,8 +435,15 @@ def create_tag_scenes():
 	for i in bpy.data.scenes:
 		if i.name.startswith('Tag: ') :
 			bpy.context.screen.scene = i
-			bpy.ops.sequencer.select_all(action = "SELECT")
-			bpy.ops.sequencer.view_selected()
+			if len(bpy.context.scene.sequence_editor.sequences) > 0 :
+				try:
+					bpy.ops.sequencer.select_all(action = "SELECT")
+					bpy.ops.sequencer.view_selected()
+				except:
+					pass
+			else:
+				bpy.ops.scene.delete()
+
 	bpy.context.area.type = original_type
 	goto_main_scene()
 
@@ -432,26 +480,25 @@ inpoint = 0
 outpoint = 0
 tags = 'none'
 
-# Load the log file, update username and paths if needed
+# Load the log file
 me = getpass.getuser()
 my_os = platform.system()
 log_file = os.path.expanduser('~/%s.ez' % 'Easy-Logging-log-file')
 if os.path.exists(log_file):
-	user,log = pickle.load( open( log_file, "rb" ) )
+	path_list, user, log = pickle.load( open( log_file, "rb" ) )
 	print(user)
 	print(log)
 	if not me == user:
 		print('Converting the path of imported logged files...')
-		for i, s in enumerate(log):
-			new_path = convert_path(user, me, s[0][0])
-			print(str(i) + ') ' + s[0][0] + ' --> ' + new_path)
-			log[i][0][0] = new_path
-		update_log_file()
+		for i, s in enumerate(path_list):
+			new_path = convert_path(user, me, s)
+			path_list.remove(s)
+			path_list.add(new_path)
 else:
 	user = me
 	log = []
 	open(log_file, 'a').close()
-
+	path_list = set()
 
 # --- CLASSES ---------------------------------------------------------------------
 
@@ -565,6 +612,7 @@ class OBJECT_OT_import(bpy.types.Operator):
 				the_path = params.directory
 				the_file = params.filename
 				clip = the_path + the_file
+				add_path(the_path)
 				break
 
 		exists,id = clip_exists(clip)
@@ -607,6 +655,7 @@ class OBJECT_OT_Trim(bpy.types.Operator):
 				the_path = params.directory
 				the_file = params.filename
 				clip = the_path + the_file
+				add_path(the_path)
 				break
 
 		#create the log scene if it doesn't already exist
@@ -639,7 +688,7 @@ class OBJECT_OT_Trim(bpy.types.Operator):
 			else:
 				start = 1
 				end = bpy.context.scene.sequence_editor.active_strip.frame_final_duration
-				add_clip(clip,start,end)
+				add_clip(clip, start,end)
 			bpy.data.scenes['Editing table'].frame_start = start if start > 0 else 1
 			bpy.data.scenes['Editing table'].frame_end = end if end > 1 else bpy.context.scene.sequence_editor.active_strip.frame_final_duration
 			# add existing tags linked to the clip
