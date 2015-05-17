@@ -780,9 +780,9 @@ class OBJECT_OT_Back(bpy.types.Operator):
 		
 	def invoke(self, context, event):
 		global main_scene
-		if bpy.context.screen.scene == bpy.data.scenes['Editing table']:
-			update_log()
-			goto_main_scene()
+		#if bpy.context.screen.scene == bpy.data.scenes['Editing table']:
+		update_log()
+		goto_main_scene()
 		return {'FINISHED'}
 
 # creating the menu "create log file" operator   
