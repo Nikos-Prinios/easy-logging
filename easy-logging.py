@@ -409,9 +409,18 @@ def import_clip(scene,clip,inpoint,outpoint,mark):
 	bpy.context.screen.scene = original_scene
 	bpy.context.area.type = original_type
 
+# Delete the tag scenes
+def delete_the_tag_scenes():
+	original_scene = bpy.context.screen.scene
+	for i in bpy.data.scenes:
+		if i.name.startswith('Tag: ') :
+			bpy.context.screen.scene = i
+			bpy.ops.scene.delete()
+	bpy.context.screen.scene = original_scene 
+
 # Create the tag scenes
 def create_tag_scenes():
-	main_scene = bpy.context.screen.scene
+	original_scene = bpy.context.screen.scene
 	for i in bpy.data.scenes:
 		if i.name.startswith('Tag: ') :
 			bpy.context.screen.scene = i
@@ -425,7 +434,7 @@ def create_tag_scenes():
 				length = outpoint-inpoint
 				if not scene_exists(tag):
 					new_scene = bpy.data.scenes.new(tag)
-					new_scene.render.fps = main_scene.render.fps
+					new_scene.render.fps = original_scene.render.fps
 					new_scene.use_audio_sync = True
 					new_scene.use_frame_drop = True
 				scene = bpy.data.scenes[tag]
@@ -447,7 +456,7 @@ def create_tag_scenes():
 				bpy.ops.scene.delete()
 
 	bpy.context.area.type = original_type
-	goto_main_scene()
+	bpy.context.screen.scene = original_scene
 
 # Create new log file
 def create_new_log_file():
@@ -788,6 +797,9 @@ class SEQUENCER_OT_createlog(bpy.types.Operator):
 class SEQUENCER_OT_create_tag_scenes(bpy.types.Operator):
 	bl_idname = "sequencer.createtagtcenes"
 	bl_label = "Create the tag scenes"
+	@classmethod
+	def poll(cls, context):
+		return ('Tag:' not in bpy.context.screen.scene.name)
 	def execute(self, context):
 		create_tag_scenes()
 		return {'FINISHED'}
@@ -799,6 +811,18 @@ class SEQUENCER_OT_create_new_log_file(bpy.types.Operator):
 	def execute(self, context):
 		create_new_log_file()
 		return {'FINISHED'}
+
+# creating the delete tag-scenes operator
+class SEQUENCER_OT_delete_tag_scenes(bpy.types.Operator):
+	bl_idname = "sequencer.deletetagscenes"
+	bl_label = "Delete the tag-scenes"
+	@classmethod
+	def poll(cls, context):
+		return ('Tag:' not in bpy.context.screen.scene.name)
+	def execute(self, context):
+		delete_the_tag_scenes()
+		return {'FINISHED'}
+
 
 # -- MENU EASY LOGGING ----------------------------------------------------
 
@@ -818,6 +842,9 @@ def log_func(self, context):
 '''                    
 def createTagScene_func(self, context):
 	self.layout.operator(SEQUENCER_OT_create_tag_scenes.bl_idname, text="Build the tag scenes", icon='OOPS')
+
+def deleteTagScene_func(self, context):
+	self.layout.operator(SEQUENCER_OT_delete_tag_scenes.bl_idname, text="Delete the tag scenes", icon='CANCEL')
 
 def createNewLogfile_func(self, context):
 	self.layout.operator(SEQUENCER_OT_create_new_log_file.bl_idname, text="Create a new log file", icon='FILE_SCRIPT')    
@@ -839,8 +866,10 @@ def register():
 	#bpy.utils.register_class(SEQUENCER_OT_createlog)
 	#bpy.types.OBJECT_MT_easy_log.append(log_func)
 	bpy.types.OBJECT_MT_easy_log.append(createTagScene_func)
-	bpy.types.OBJECT_MT_easy_log.append(createNewLogfile_func)
+	bpy.types.OBJECT_MT_easy_log.append(deleteTagScene_func)
+	#bpy.types.OBJECT_MT_easy_log.append(createNewLogfile_func)
 	bpy.utils.register_class(SEQUENCER_OT_create_tag_scenes)
+	bpy.utils.register_class(SEQUENCER_OT_delete_tag_scenes)
 	bpy.utils.register_class(SEQUENCER_OT_create_new_log_file)
 	bpy.utils.register_class(OBJECT_OT_import)
 
@@ -868,6 +897,7 @@ def unregister():
 	#bpy.utils.unregister_class(SEQUENCER_OT_createlog)
 	#bpy.types.OBJECT_MT_easy_log.remove(log_func)
 	bpy.utils.unregister_class(SEQUENCER_OT_create_tag_scenes)
+	bpy.utils.unregister_class(SEQUENCER_OT_delete_tag_scenes)
 	bpy.utils.unregister_class(SEQUENCER_OT_create_new_log_file)
 	bpy.utils.unregister_class(OBJECT_OT_import)
 	
