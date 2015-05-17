@@ -381,6 +381,7 @@ def import_clip(scene,clip,inpoint,outpoint,mark):
 							bpy.ops.sequencer.sound_strip_add(filepath=filepath, frame_start=frame)
 						except:
 							pass
+					break
 		else :
 			if (file_type == "MOVIE"):
 				try:
@@ -437,8 +438,9 @@ def create_tag_scenes():
 			bpy.context.screen.scene = i
 			if len(bpy.context.scene.sequence_editor.sequences) > 0 :
 				try:
-					bpy.ops.sequencer.select_all(action = "SELECT")
-					bpy.ops.sequencer.view_selected()
+					bpy.ops.sequencer.view_all()
+					#bpy.ops.sequencer.select_all(action = "SELECT")
+					#bpy.ops.sequencer.view_selected()
 				except:
 					pass
 			else:
