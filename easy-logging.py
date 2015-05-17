@@ -30,8 +30,8 @@ bl_info = {
 	"tracker_url": "",}
 
 # -- IMPORT ------------------------------------------------------------
-import bpy, random, time, os
-import pickle, time, getpass, re, platform
+import bpy, random, time, os, ntpath
+import pickle, time, re, platform
 from string import ascii_uppercase
 
 # -- Custom Properties & VARIABLES -------------------------------------
@@ -54,71 +54,22 @@ global clip, clip_object, main_scene, log, fps, log_file, me
 # outpoint - for either a clip or a tag
 # -----------------------------------------------------------------------
 
-
-def convert_path(original_user, me, path):
-	# case windows
-	path_ini = 'C:\\Users\\' + original_user + '\\'
-	if path.startswith(path_ini):
-		file_path = path[len(path_ini):]
-		if 'Win' in my_os :
-			new_path = os.path.expanduser('~') + '\\' + file_path
-			return new_path
-		else :
-			file_path = file_path.replace('\\','/')
-			new_path = os.path.expanduser('~') + '/' + file_path
-			return new_path
-
-	# Case osx
-	path_ini = '/Users/' + original_user + '/'
-	path_vol = '/Volumes/'
-	
-	if path.startswith(path_ini):
-		file_path = path[len(path_ini):]
-		if 'Win' in my_os :
-			file_path = file_path.replace('/','\\')
-			new_path = os.path.expanduser('~') + '\\' + file_path
-			return new_path
-		else :
-			new_path = os.path.expanduser('~') + '/' + file_path
-			return new_path
-
-	elif path.startswith(path_vol):
-		if 'Linux' in my_os :
-			return path.replace('Volumes/','media/' + me + '/')
-		elif 'Darwin' in my_os :
-			return path.replace(original_user,me,1)
-	
-	# Case linux
-	path_ini = '/home/' + original_user + '/'
-	path_vol = '/media/'+ original_user + '/'
-	
-	if path.startswith(path_ini):
-		file_path = path[len(path_ini):]
-		if 'Win' in my_os :
-			file_path = file_path.replace('/','\\')
-			new_path = os.path.expanduser('~') + '\\' + file_path
-			return new_path
-		else :
-			new_path = os.path.expanduser('~') + '/' + file_path
-			return new_path
-	
-	elif path.startswith(path_vol):
-		if 'Linux' in my_os :
-			return path.replace(original_user,me)
-		elif 'Darwin' in my_os :
-			return path.replace(path_vol, '/Volumes/',1)
-	else:
-		return path
-
 # Update the log file
 def update_log_file(): 
-	global log_file, log, me
-	pickle.dump((me,log), open( log_file, "wb" ) )
-	print("Log updated and recorded.")
+	global log_file, log
+	pickle.dump((log), open( log_file, "wb" ) )
+
+# extract the filename from a path
+def filename(path):
+    head, tail = ntpath.split(path)
+    return tail or ntpath.basename(head)
 
 # Add a new clip
 def add_clip(clip,inpoint,outpoint):
-	log.append([[clip,inpoint,outpoint]])
+	size = os.path.getsize(clip)
+	clip_name = filename(clip) + '#' + str(size)
+	print (clip_name)
+	log.append([[clip_name,inpoint,outpoint]])
 
 # Add tag to a referenced clip
 def add_tag(clip,name,inpoint,outpoint):
@@ -131,8 +82,10 @@ def add_tag(clip,name,inpoint,outpoint):
  
 # Check if a clip is already referenced and return its id
 def clip_exists(clip):
+	size = os.path.getsize(clip)
+	f = filename(clip) + '#' + str(size)
 	for x in log:
-		if clip in x[0]:
+		if f in x[0][0]:
 			return (True,log.index(x))
 	return (False, -1)
 
@@ -173,7 +126,7 @@ def tag_list(clip):
 	if exists:
 		for y in log[id][1:]:
 			tags.append([y[0],y[1],y[2]])
-		return tags
+	return tags
 
 # Remove a tag from a clip
 def remove_tag(clip, tag):
@@ -438,23 +391,11 @@ inpoint = 0
 outpoint = 0
 tags = 'none'
 
-# Load the log file, update username and paths if needed
-me = getpass.getuser()
-my_os = platform.system()
+# Load the log file
 log_file = os.path.expanduser('~/%s.ez' % 'Easy-Logging-log-file')
 if os.path.exists(log_file):
-	user,log = pickle.load( open( log_file, "rb" ) )
-	print(user)
-	print(log)
-	if not me == user:
-		print('Converting the path of imported logged files...')
-		for i, s in enumerate(log):
-			new_path = convert_path(user, me, s[0][0])
-			print(str(i) + ') ' + s[0][0] + ' --> ' + new_path)
-			log[i][0][0] = new_path
-		update_log_file()
+	log = pickle.load( open( log_file, "rb" ) )
 else:
-	user = me
 	log = []
 	open(log_file, 'a').close()
 
@@ -645,7 +586,7 @@ class OBJECT_OT_Trim(bpy.types.Operator):
 			else:
 				start = 1
 				end = bpy.context.scene.sequence_editor.active_strip.frame_final_duration
-				add_clip(clip,start,end)
+				add_clip(clip, start,end)
 			bpy.data.scenes['Editing table'].frame_start = start if start > 0 else 1
 			bpy.data.scenes['Editing table'].frame_end = end if end > 1 else bpy.context.scene.sequence_editor.active_strip.frame_final_duration
 			# add existing tags linked to the clip
