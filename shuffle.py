@@ -45,13 +45,13 @@ if os.path.exists(log_file):
 	path_list, user,log = pickle.load( open( log_file, "rb" ) )
 	print('Metadata created by : ' + user)
 	
-	# La list des tags
+	# the tag list
 	tag_list = set()
 	for t in pattern:
 		tag_list.add(t)
 	print ('tag list: ' + str(tag_list))
 	
-	# construction du dictionnaire des tags
+	# building the dictionnary
 	for t in tag_list:	
 		dict[t]=[]
 		print(t)
