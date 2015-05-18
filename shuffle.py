@@ -2,7 +2,7 @@ import bpy, random
 
 # ************************************************************************************************
 # Define a pattern
-pattern = 'street street street street school school teacher teacher teacher teacher student student student teacher student school school school street street'
+pattern = 'teacher student student student teacher student school street'
 
 # Pace of the music (in frames)
 global pace
