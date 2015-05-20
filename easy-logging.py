@@ -42,7 +42,7 @@ bpy.types.Scene.local_edit = bpy.props.BoolProperty(name="Local Edit",descriptio
 bpy.types.Scene.meta = bpy.props.BoolProperty(name="As Meta",description="Send trimed clip(s) as a meta strip to the sequencer",default = False)
 
 bad_obj_types = ['CAMERA','LAMP','MESH']
-global clip, clip_object, main_scene, log, fps, log_file, me, log_text
+global clip, clip_object, main_scene, log, fps, log_file, me
 
 fps = 30
 
@@ -71,7 +71,7 @@ def log_clips_for_tag():
 	global list_of_tags, log
 	output = ''
 	for t in list_of_tags:
-		output += '\n' + u(t) + '\n'
+		output += '\n' + u(t).upper() + '\n'
 		for clip_file in log:
 			if len(clip_file) > 1 :
 				clip = clip_file[0]
@@ -81,7 +81,7 @@ def log_clips_for_tag():
 					outpoint = tag_obj[2]
 					length = outpoint - inpoint
 					if tag == t:
-						output += (clip[0].split('#')[0] + ' ' + tc(inpoint) + ' ' + tc(outpoint) + '  -  ' + tc(length) + '\n')
+						output += (clip[0].split('#')[0] + '\t' + tc(inpoint) + '\t' + tc(outpoint) + '\t' + tc(length) + '\n')
 	return output
 
 # list of clips
@@ -90,12 +90,12 @@ def log_list_of_clips():
 	output = ''
 	for clip_file in log:
 		clip = clip_file[0]
-		output += (clip[0].split('#')[0] + ' ' + tc(clip[1]) + ' ' + tc(clip[2]) + '  \n')
+		output += (clip[0].split('#')[0] + '\t' + tc(clip[1]) + '\t' + tc(clip[2]))
 		t = set()
 		for tag_obj in clip_file[1:]:
 			t.add(tag_obj[0].split('.', 1)[0])
 		if len(t) > 0 :
-			output += '#' + ', #'.join(t) + '\n'
+			output += '\t#' + ', #'.join(t)
 		output += '\n'
 	output +='\n'
 	return output
@@ -114,7 +114,7 @@ def tc(fn):
 	ff = fn % fps
 	s = fn // fps
 	result = s // 3600, s // 60 % 60, s % 60, ff
-	return ('['+ str(result[0]) + ':' + str(result[1]) + ':' + str(result[2]) + ':' + str(result[3]) + ']')
+	return ('['+ str(result[0]).zfill(2) + ':' + str(result[1]).zfill(2) + ':' + str(result[2]).zfill(2) + ':' + str(result[3]).zfill(2) + ']')
 
 # Check if the path is already registered and add it if not
 def add_path(path):
