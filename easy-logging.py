@@ -1,4 +1,4 @@
-#                                                        May 15th 2015
+#                                                        May 20th 2015
 #  ***** GPL LICENSE BLOCK ***** DEV BRANCH
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -42,9 +42,9 @@ bpy.types.Scene.local_edit = bpy.props.BoolProperty(name="Local Edit",descriptio
 bpy.types.Scene.meta = bpy.props.BoolProperty(name="As Meta",description="Send trimed clip(s) as a meta strip to the sequencer",default = False)
 
 bad_obj_types = ['CAMERA','LAMP','MESH']
-global clip, clip_object, main_scene, log, fps, log_file, me
+global clip, clip_object, main_scene, log, fps, log_file, me, log_text
 
-
+fps = 30
 
 # -- FUNCTIONS - 2.0 ----------------------------------------------------
 # clip = clip name
@@ -53,6 +53,68 @@ global clip, clip_object, main_scene, log, fps, log_file, me
 # inpoint - for either a clip or a tag
 # outpoint - for either a clip or a tag
 # -----------------------------------------------------------------------
+
+# the list of unique tags
+def log_create_tags_list():
+	global log, list_of_tags
+	list_of_tags = set()
+	for clip_file in log:
+		if len(clip_file) > 1 :
+			clip = clip_file[0]
+			for tag_obj in clip_file[1:]:
+				tag = tag_obj[0].split('.', 1)[0]
+				list_of_tags.add(tag)
+	print(list_of_tags)
+
+# writes the list of clips associated with a tag
+def log_clips_for_tag():
+	global list_of_tags, log
+	output = ''
+	for t in list_of_tags:
+		output += '\n' + u(t) + '\n'
+		for clip_file in log:
+			if len(clip_file) > 1 :
+				clip = clip_file[0]
+				for tag_obj in clip_file[1:]:
+					tag = tag_obj[0].split('.', 1)[0]
+					inpoint = tag_obj[1]
+					outpoint = tag_obj[2]
+					length = outpoint - inpoint
+					if tag == t:
+						output += (clip[0].split('#')[0] + ' ' + tc(inpoint) + ' ' + tc(outpoint) + '  -  ' + tc(length) + '\n')
+	return output
+
+# list of clips
+def log_list_of_clips():
+	global log
+	output = ''
+	for clip_file in log:
+		clip = clip_file[0]
+		output += (clip[0].split('#')[0] + ' ' + tc(clip[1]) + ' ' + tc(clip[2]) + '  \n')
+		t = set()
+		for tag_obj in clip_file[1:]:
+			t.add(tag_obj[0].split('.', 1)[0])
+		if len(t) > 0 :
+			output += '#' + ', #'.join(t) + '\n'
+		output += '\n'
+	output +='\n'
+	return output
+
+
+# underlining function
+def u(the_string):
+	score = ''
+	for x in str(the_string):
+		score=score + '-'
+	return the_string + '\n' + score
+
+# Timecode conversion
+def tc(fn):
+	global fps
+	ff = fn % fps
+	s = fn // fps
+	result = s // 3600, s // 60 % 60, s % 60, ff
+	return ('['+ str(result[0]) + ':' + str(result[1]) + ':' + str(result[2]) + ':' + str(result[3]) + ']')
 
 # Check if the path is already registered and add it if not
 def add_path(path):
@@ -216,7 +278,7 @@ def scene_exists(scene):
 
 # Create the 'Editing table' scene
 def reset_editing_table():
-	global main_scene
+	global main_scene, fps
 	if scene_exists('Editing table'):
 		bpy.context.screen.scene = bpy.data.scenes['Editing table']
 		bpy.ops.scene.delete()                                    
@@ -822,6 +884,21 @@ class SEQUENCER_OT_delete_tag_scenes(bpy.types.Operator):
 		delete_the_tag_scenes()
 		return {'FINISHED'}
 
+# creating the log text operator
+class SEQUENCER_OT_create_log_text(bpy.types.Operator):
+	bl_idname = "sequencer.createlogtext"
+	bl_label = "Create the log document"
+	def execute(self, context):
+		#Create the file
+		the_time = (time.strftime("%d/%m/%Y")) + ' - ' + (time.strftime("%H:%M:%S"))
+		log_text = bpy.data.texts.new('Easy-logging log file')
+		log_text.write(u('EASY LOGGING - LOG FILE  ' + user + ' -- ' + the_time) + '\n')
+		log_text.write('\n' + u('CLIPS BY TAGS') + '\n')
+		log_create_tags_list()
+		log_text.write(log_clips_for_tag())
+		log_text.write('\n' + u('CLIPS : IN OUT & TAGS') + '\n')
+		log_text.write(log_list_of_clips())
+		return {'FINISHED'}
 
 # -- MENU EASY LOGGING ----------------------------------------------------
 
@@ -845,6 +922,9 @@ def createTagScene_func(self, context):
 def deleteTagScene_func(self, context):
 	self.layout.operator(SEQUENCER_OT_delete_tag_scenes.bl_idname, text="Delete the tag scenes", icon='CANCEL')
 
+def createLogText_func(self, context):
+	self.layout.operator(SEQUENCER_OT_create_log_text.bl_idname, text="Create the log document", icon='FILE_SCRIPT')
+
 def createNewLogfile_func(self, context):
 	self.layout.operator(SEQUENCER_OT_create_new_log_file.bl_idname, text="Create a new log file", icon='FILE_SCRIPT')    
 
@@ -866,9 +946,11 @@ def register():
 	#bpy.types.OBJECT_MT_easy_log.append(log_func)
 	bpy.types.OBJECT_MT_easy_log.append(createTagScene_func)
 	bpy.types.OBJECT_MT_easy_log.append(deleteTagScene_func)
-	#bpy.types.OBJECT_MT_easy_log.append(createNewLogfile_func)
+	bpy.types.OBJECT_MT_easy_log.append(createLogText_func)
+	bpy.types.OBJECT_MT_easy_log.append(createNewLogfile_func)
 	bpy.utils.register_class(SEQUENCER_OT_create_tag_scenes)
 	bpy.utils.register_class(SEQUENCER_OT_delete_tag_scenes)
+	bpy.utils.register_class(SEQUENCER_OT_create_log_text)
 	bpy.utils.register_class(SEQUENCER_OT_create_new_log_file)
 	bpy.utils.register_class(OBJECT_OT_import)
 
@@ -897,6 +979,7 @@ def unregister():
 	#bpy.types.OBJECT_MT_easy_log.remove(log_func)
 	bpy.utils.unregister_class(SEQUENCER_OT_create_tag_scenes)
 	bpy.utils.unregister_class(SEQUENCER_OT_delete_tag_scenes)
+	bpy.utils.unregister_class(SEQUENCER_OT_create_log_text)
 	bpy.utils.unregister_class(SEQUENCER_OT_create_new_log_file)
 	bpy.utils.unregister_class(OBJECT_OT_import)
 	
