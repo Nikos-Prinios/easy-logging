@@ -416,7 +416,7 @@ def detect_strip_type(filepath):
 	elif extension in imb_ext_audio:
 		type = 'SOUND'
 	else:
-		type = None
+		type = 'OTHER'
 	return type
 
 # import a trimed clip into a scene
@@ -734,9 +734,12 @@ class OBJECT_OT_Trim(bpy.types.Operator):
 				clip = the_path + the_file
 				add_path(the_path)
 				break
-				
+
 		if the_file == '':
-			print('breaking')
+			return {'FINISHED'}
+
+		file_type = detect_strip_type(clip)
+		if (file_type not in "MOVIE SOUND") :
 			return {'FINISHED'}
 
 		#create the log scene if it doesn't already exist
@@ -746,7 +749,6 @@ class OBJECT_OT_Trim(bpy.types.Operator):
 		bpy.context.screen.scene = bpy.data.scenes['Editing table']
 
 		#check the type of the file and add its strips accordingly
-		file_type = detect_strip_type(clip)
 		if (file_type == "MOVIE") or (file_type == "SOUND"):
 			original_type = bpy.context.area.type
 			bpy.context.area.type = "SEQUENCE_EDITOR"
