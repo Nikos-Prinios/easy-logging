@@ -688,6 +688,10 @@ class OBJECT_OT_import(bpy.types.Operator):
 				add_path(the_path)
 				break
 
+		if the_file == '':
+			print('breaking')
+			return {'FINISHED'}
+
 		exists,id = clip_exists(clip)
 		if exists:
 			clip_object = get_clip(clip)
@@ -730,6 +734,10 @@ class OBJECT_OT_Trim(bpy.types.Operator):
 				clip = the_path + the_file
 				add_path(the_path)
 				break
+				
+		if the_file == '':
+			print('breaking')
+			return {'FINISHED'}
 
 		#create the log scene if it doesn't already exist
 		reset_editing_table()
