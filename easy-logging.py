@@ -90,12 +90,12 @@ def log_list_of_clips():
 	output = ''
 	for clip_file in log:
 		clip = clip_file[0]
-		output += (clip[0].split('#')[0] + '\t' + tc(clip[1]) + '\t' + tc(clip[2]))
+		output += (clip[0].split('#')[0] + '\t' + tc(clip[1]) + '\t' + tc(clip[2]) + '')
 		t = set()
 		for tag_obj in clip_file[1:]:
 			t.add(tag_obj[0].split('.', 1)[0])
 		if len(t) > 0 :
-			output += '\t#' + ', #'.join(t)
+			output += '\t#' + ', #'.join(t) + '\n'
 		output += '\n'
 	output +='\n'
 	return output
@@ -891,8 +891,8 @@ class SEQUENCER_OT_create_log_text(bpy.types.Operator):
 	def execute(self, context):
 		#Create the file
 		the_time = (time.strftime("%d/%m/%Y")) + ' - ' + (time.strftime("%H:%M:%S"))
-		log_text = bpy.data.texts.new('Easy-logging log file')
-		log_text.write(u('EASY LOGGING - LOG FILE  ' + user + ' -- ' + the_time) + '\n')
+		log_text = bpy.data.texts.new('Log document')
+		log_text.write(u('EASY LOGGING - LOG FILE  Author: ' + user + ' -- ' + the_time) + '\n')
 		log_text.write('\n' + u('CLIPS BY TAGS') + '\n')
 		log_create_tags_list()
 		log_text.write(log_clips_for_tag())
@@ -912,10 +912,7 @@ class EasyLog(bpy.types.Menu):
 def draw_item(self, context):
 	layout = self.layout
 	layout.menu(EasyLog.bl_idname)
-'''
-def log_func(self, context):
-	self.layout.operator(SEQUENCER_OT_createlog.bl_idname, text="Create the log file", icon='LINENUMBERS_ON')
-'''                    
+                 
 def createTagScene_func(self, context):
 	self.layout.operator(SEQUENCER_OT_create_tag_scenes.bl_idname, text="Build the tag scenes", icon='OOPS')
 
@@ -923,7 +920,7 @@ def deleteTagScene_func(self, context):
 	self.layout.operator(SEQUENCER_OT_delete_tag_scenes.bl_idname, text="Delete the tag scenes", icon='CANCEL')
 
 def createLogText_func(self, context):
-	self.layout.operator(SEQUENCER_OT_create_log_text.bl_idname, text="Create the log document", icon='FILE_SCRIPT')
+	self.layout.operator(SEQUENCER_OT_create_log_text.bl_idname, text="Create the log document", icon='LINENUMBERS_ON')
 
 def createNewLogfile_func(self, context):
 	self.layout.operator(SEQUENCER_OT_create_new_log_file.bl_idname, text="Create a new log file", icon='FILE_SCRIPT')    
