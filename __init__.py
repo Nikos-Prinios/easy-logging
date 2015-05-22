@@ -189,7 +189,7 @@ def filename(path):
 
 # Add a new clip
 def add_clip(clip,inpoint,outpoint):
-	size = os.path.getsize(clip)
+	size = os.stat(clip).st_size
 	clip_name = filename(clip) + '#' + str(size)
 	print (clip_name)
 	log.append([[clip_name,inpoint,outpoint]])
