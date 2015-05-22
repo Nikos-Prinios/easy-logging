@@ -205,7 +205,7 @@ def add_tag(clip,name,inpoint,outpoint):
  
 # Check if a clip is already referenced and return its id
 def clip_exists(clip):
-	size = os.path.getsize(clip)
+	size = os.stat(clip).st_size
 	f = filename(clip) + '#' + str(size)
 	for x in log:
 		if f in x[0][0]:
