@@ -39,7 +39,6 @@ bpy.types.Object.tags = bpy.props.StringProperty()
 bpy.types.Object.inpoint = bpy.props.IntProperty()   
 bpy.types.Object.outpoint = bpy.props.IntProperty() 
 bpy.types.Scene.local_edit = bpy.props.BoolProperty(name="Local Edit",description="Edit in the opened sequencer",default = True)
-bpy.types.Scene.meta = bpy.props.BoolProperty(name="As Meta",description="Send trimed clip(s) as a meta strip to the sequencer",default = False)
 
 bad_obj_types = ['CAMERA','LAMP','MESH']
 global clip, clip_object, main_scene, log, fps, log_file, me
@@ -53,6 +52,24 @@ fps = 30
 # inpoint - for either a clip or a tag
 # outpoint - for either a clip or a tag
 # -----------------------------------------------------------------------
+
+# Do I need to metastrip ?
+def meta():
+	meta = False
+	list = []
+	strips = bpy.context.scene.sequence_editor.sequences
+	for s in strips:
+		if s.type != 'COLOR' :
+			list.append(s)
+	if len(list) == 2 :
+		if strips[0].name.split('.',-1)[0] == strips[1].name.split('.',-1)[0] :
+			if strips[0].type == 'MOVIE' and strips[1].type == 'SOUND':
+				return meta
+			elif strips[1].type == 'MOVIE' and strips[0].type == 'SOUND':
+				return meta
+			else : return True
+		else : return True
+	else : return True
 
 # the list of unique tags
 def log_create_tags_list():
@@ -592,7 +609,6 @@ class iop_panel(bpy.types.Header):
 			row.operator("sequencer.setinout", icon='FULLSCREEN_EXIT')
 			row.operator("sequencer.addtag", icon='PLUS')
 			row.operator("sequencer.place", icon="PASTEFLIPDOWN")
-			row.prop(context.scene,"meta")
 			row.operator("sequencer.back", icon="LOOP_BACK")
 		elif bpy.context.screen.scene.name.startswith('Tag: ') and main_scene:
 			row=layout.row()
@@ -625,7 +641,8 @@ class OBJECT_OT_Place(bpy.types.Operator):
 			if scene.name == 'Editing table':
 				update_log()
 				trim_area(scene, inpoint, outpoint)
-				if scene.meta == True:
+				# if metastrip is needed
+				if meta() :
 					# make metastrip
 					bpy.ops.sequencer.select_all(action = "SELECT")
 					bpy.ops.sequencer.meta_make()
