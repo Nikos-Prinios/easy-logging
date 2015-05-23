@@ -120,7 +120,7 @@ def tc(fn):
 def add_path(path):
 	global path_list
 	path_list.add(path)
-	print (path_list)
+	#print (path_list)
 
 def convert_path(original_user, me, path):
 	# case windows
@@ -180,6 +180,7 @@ def convert_path(original_user, me, path):
 # Update the log file
 def update_log_file(): 
 	global log_file, log, path_list, user
+	user = getpass.getuser()
 	pickle.dump((path_list, user, log), open( log_file, "wb" ) )
 
 # extract the filename from a path
@@ -205,7 +206,8 @@ def add_tag(clip,name,inpoint,outpoint):
  
 # Check if a clip is already referenced and return its id
 def clip_exists(clip):
-	size = os.stat(clip).st_size
+	try: size = os.stat(clip).st_size
+	except: return (False, -1)
 	f = filename(clip) + '#' + str(size)
 	for x in log:
 		if f in x[0][0]:
@@ -305,8 +307,7 @@ def goto_main_scene():
 				return False
 		else:
 			return False
-	except:
-		return False
+	except: return False
 
 # Create tag strip
 def new_tag_strip(inpoint,outpoint,name):
@@ -333,8 +334,7 @@ def update_log():
 				inpoint = s.frame_start
 				outpoint = s.frame_final_end
 				update_tag(clip,tag,inpoint,outpoint)
-	except:
-		pass
+	except: pass
 	# delete removed tags
 	old_tag_list = tag_list(clip)
 	for x in old_tag_list:
@@ -436,25 +436,21 @@ def import_clip(scene,clip,inpoint,outpoint,mark):
 					if (file_type == "MOVIE"):
 						try:
 							bpy.ops.sequencer.movie_strip_add(filepath=filepath, frame_start=frame)
-						except:
-							pass
+						except: pass
 					elif (file_type == "SOUND"):
 						try:
 							bpy.ops.sequencer.sound_strip_add(filepath=filepath, frame_start=frame)
-						except:
-							pass
+						except: pass
 					break
 		else :
 			if (file_type == "MOVIE"):
 				try:
 					bpy.ops.sequencer.movie_strip_add(filepath=clip, frame_start=frame)
-				except:
-					pass
+				except: pass
 			if (file_type == "SOUND"):
 				try:
 					bpy.ops.sequencer.sound_strip_add(filepath=clip, frame_start=frame)
-				except:
-					pass
+				except: pass
 
 		length = outpoint - inpoint 
 		for s in bpy.context.selected_sequences:
@@ -512,8 +508,7 @@ def create_tag_scenes():
 					bpy.ops.sequencer.view_all()
 					#bpy.ops.sequencer.select_all(action = "SELECT")
 					#bpy.ops.sequencer.view_selected()
-				except:
-					pass
+				except: pass
 			else:
 				bpy.ops.scene.delete()
 
@@ -558,15 +553,14 @@ me = getpass.getuser()
 my_os = platform.system()
 log_file = os.path.expanduser('~/%s.ez' % 'Easy-Logging-log-file')
 if os.path.exists(log_file):
-	path_list, user, log = pickle.load( open( log_file, "rb" ) )
-	print(user)
-	print(log)
-	if not me == user:
-		print('Converting the path of imported logged files...')
-		for i, s in enumerate(path_list):
-			new_path = convert_path(user, me, s)
-			path_list.remove(s)
-			path_list.add(new_path)
+	try:
+		path_list, user, log = pickle.load( open( log_file, "rb" ) )
+		if not me == user:
+			for i, s in enumerate(path_list):
+				new_path = convert_path(user, me, s)
+				path_list.remove(s)
+				path_list.add(new_path)
+	except EOFError: pass
 else:
 	user = me
 	log = []
@@ -688,9 +682,10 @@ class OBJECT_OT_import(bpy.types.Operator):
 				add_path(the_path)
 				break
 
-		if the_file == '':
-			print('breaking')
-			return {'FINISHED'}
+		try:
+			if the_file == '':
+				return {'FINISHED'}
+		except : return {'FINISHED'}
 
 		exists,id = clip_exists(clip)
 		if exists:
@@ -705,8 +700,7 @@ class OBJECT_OT_import(bpy.types.Operator):
 		else:
 			try:
 				bpy.ops.sequencer.movie_strip_add(filepath=clip, frame_start=bpy.context.scene.frame_current)
-			except:
-				pass
+			except: pass
 
 		return {'FINISHED'}
 
@@ -735,8 +729,10 @@ class OBJECT_OT_Trim(bpy.types.Operator):
 				add_path(the_path)
 				break
 
-		if the_file == '':
-			return {'FINISHED'}
+		try:
+			if the_file == '':
+				return {'FINISHED'}
+		except : return {'FINISHED'}
 
 		file_type = detect_strip_type(clip)
 		if (file_type not in "MOVIE SOUND") :
