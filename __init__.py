@@ -564,11 +564,12 @@ def trim_area(scene, inpoint, outpoint):
 inpoint = 0
 outpoint = 0
 tags = 'none'
+me = getpass.getuser()
 user = me
 log = []
 path_list = set()
 # Load the log file
-me = getpass.getuser()
+
 my_os = platform.system()
 log_file = os.path.expanduser('~/%s.ez' % 'Easy-Logging-log-file')
 if os.path.exists(log_file):
