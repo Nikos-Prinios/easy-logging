@@ -1,6 +1,6 @@
-#                                                        May 21th 2015
 #  ***** GPL LICENSE BLOCK ***** DEV BRANCH
 #
+#                                                        May 21th 2015
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -564,7 +564,9 @@ def trim_area(scene, inpoint, outpoint):
 inpoint = 0
 outpoint = 0
 tags = 'none'
-
+user = me
+log = []
+path_list = set()
 # Load the log file
 me = getpass.getuser()
 my_os = platform.system()
@@ -579,10 +581,8 @@ if os.path.exists(log_file):
 				path_list.add(new_path)
 	except EOFError: pass
 else:
-	user = me
-	log = []
 	open(log_file, 'a').close()
-	path_list = set()
+	
 
 # --- CLASSES ---------------------------------------------------------------------
 
