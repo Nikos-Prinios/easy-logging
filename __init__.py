@@ -69,6 +69,7 @@ def meta():
 				return meta
 			else : return True
 		else : return True
+	elif len(list) == 1 : return meta
 	else : return True
 
 # the list of unique tags
@@ -569,7 +570,6 @@ user = me
 log = []
 path_list = set()
 # Load the log file
-
 my_os = platform.system()
 log_file = os.path.expanduser('~/%s.ez' % 'Easy-Logging-log-file')
 if os.path.exists(log_file):
@@ -580,8 +580,9 @@ if os.path.exists(log_file):
 				new_path = convert_path(user, me, s)
 				path_list.remove(s)
 				path_list.add(new_path)
-	except EOFError: pass
+	except EOFError: open(log_file, 'a').close()
 else:
+	print('Create the metadata file')
 	open(log_file, 'a').close()
 	
 
