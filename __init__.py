@@ -471,16 +471,18 @@ def import_clip(scene,clip,inpoint,outpoint,mark):
 				except: pass
 
 		length = outpoint - inpoint 
-		for s in bpy.context.selected_sequences:
-			s.frame_final_start = frame + inpoint
-			s.frame_final_end = frame + outpoint
-		bpy.ops.sequencer.snap(frame = bpy.context.scene.frame_current)
-		if mark :
-			bpy.ops.marker.add()
-			bpy.ops.marker.rename(name=os.path.basename(clip).split('#')[0])
-		bpy.context.scene.frame_current += length
-		if mark :
-			bpy.context.scene.frame_end = bpy.context.scene.frame_current
+		try:
+			for s in bpy.context.selected_sequences:
+				s.frame_final_start = frame + inpoint
+				s.frame_final_end = frame + outpoint
+			bpy.ops.sequencer.snap(frame = bpy.context.scene.frame_current)
+			if mark :
+				bpy.ops.marker.add()
+				bpy.ops.marker.rename(name=os.path.basename(clip).split('#')[0])
+			bpy.context.scene.frame_current += length
+			if mark :
+				bpy.context.scene.frame_end = bpy.context.scene.frame_current
+		except: pass
 
 	bpy.context.screen.scene = original_scene
 	bpy.context.area.type = original_type
