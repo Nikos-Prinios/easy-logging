@@ -523,14 +523,12 @@ def create_tag_scenes():
 	for i in bpy.data.scenes:
 		if i.name.startswith('Tag: ') :
 			bpy.context.screen.scene = i
-			if len(bpy.context.scene.sequence_editor.sequences) > 0 :
-				try:
+			try:
+				if len(bpy.context.scene.sequence_editor.sequences) > 0 :
 					bpy.ops.sequencer.view_all()
-					#bpy.ops.sequencer.select_all(action = "SELECT")
-					#bpy.ops.sequencer.view_selected()
-				except: pass
-			else:
-				bpy.ops.scene.delete()
+				else:
+					bpy.ops.scene.delete()
+			except: pass
 
 	bpy.context.area.type = original_type
 	bpy.context.screen.scene = original_scene
