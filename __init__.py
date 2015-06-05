@@ -370,11 +370,11 @@ def update_log():
 def header_refresh(self, context):
 	global header_colors
 	scene_name = bpy.context.screen.scene.name
-	header = bpy.context.user_preferences.themes[0].info.space.header
+	pref = bpy.context.user_preferences
 
-	if scene_name == 'Editing table': header = header_colors[0]
-	elif scene_name.startswith("Tag: "): header = header_colors[1]
-	else: header = header_colors[2]
+	if scene_name == 'Editing table': pref.themes[0].info.space.header = header_colors[0]
+	elif scene_name.startswith("Tag: "): pref.themes[0].info.space.header = header_colors[1]
+	else: pref.themes[0].info.space.header = header_colors[2]
 
 # Returns the type of the selected element in the browser          
 # Cool function written by Björn Sonnenschein 
