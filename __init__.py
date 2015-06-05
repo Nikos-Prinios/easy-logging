@@ -41,9 +41,11 @@ bpy.types.Object.outpoint = bpy.props.IntProperty()
 bpy.types.Scene.local_edit = bpy.props.BoolProperty(name="Local Edit",description="Edit in the opened sequencer",default = True)
 
 bad_obj_types = ['CAMERA','LAMP','MESH']
-global clip, clip_object, main_scene, log, fps, log_file, me
+global clip, clip_object, main_scene, log, fps, log_file, me, header_colors
 
 fps = 30
+
+header_colors = [(0.035,0.591,0.627), (0.631,0.694,0.318), (0.447,0.447,0.447)]
 
 # -- FUNCTIONS - 2.0 ----------------------------------------------------
 # clip = clip name
@@ -368,13 +370,13 @@ def update_log():
 
 # Cool function written by Leon95
 def header_refresh(self, context):
-	#assign the property to the header theme every time it is redrawn
-	if bpy.context.screen.scene.name == 'Editing table': 
-		bpy.context.user_preferences.themes[0].info.space.header = (0.035,0.591,0.627)
-	elif bpy.context.screen.scene.name.startswith("Tag: "):
-		bpy.context.user_preferences.themes[0].info.space.header = (0.631,0.694,0.318)
-	else:
-		bpy.context.user_preferences.themes[0].info.space.header = (0.447,0.447,0.447)
+	global header_colors
+	scene_name = bpy.context.screen.scene.name
+	header = bpy.context.user_preferences.themes[0].info.space.header
+
+	if scene_name == 'Editing table': header = header_colors[0]
+	elif scene_name.startswith("Tag: "): header = header_colors[1]
+	else: header = header_colors[2]
 
 # Returns the type of the selected element in the browser          
 # Cool function written by Björn Sonnenschein 
@@ -471,18 +473,16 @@ def import_clip(scene,clip,inpoint,outpoint,mark):
 				except: pass
 
 		length = outpoint - inpoint 
-		try:
-			for s in bpy.context.selected_sequences:
-				s.frame_final_start = frame + inpoint
-				s.frame_final_end = frame + outpoint
-			bpy.ops.sequencer.snap(frame = bpy.context.scene.frame_current)
-			if mark :
-				bpy.ops.marker.add()
-				bpy.ops.marker.rename(name=os.path.basename(clip).split('#')[0])
-			bpy.context.scene.frame_current += length
-			if mark :
-				bpy.context.scene.frame_end = bpy.context.scene.frame_current
-		except: pass
+		for s in bpy.context.selected_sequences:
+			s.frame_final_start = frame + inpoint
+			s.frame_final_end = frame + outpoint
+		bpy.ops.sequencer.snap(frame = bpy.context.scene.frame_current)
+		if mark :
+			bpy.ops.marker.add()
+			bpy.ops.marker.rename(name=os.path.basename(clip).split('#')[0])
+		bpy.context.scene.frame_current += length
+		if mark :
+			bpy.context.scene.frame_end = bpy.context.scene.frame_current
 
 	bpy.context.screen.scene = original_scene
 	bpy.context.area.type = original_type
@@ -523,12 +523,14 @@ def create_tag_scenes():
 	for i in bpy.data.scenes:
 		if i.name.startswith('Tag: ') :
 			bpy.context.screen.scene = i
-			try:
-				if len(bpy.context.scene.sequence_editor.sequences) > 0 :
+			if len(bpy.context.scene.sequence_editor.sequences) > 0 :
+				try:
 					bpy.ops.sequencer.view_all()
-				else:
-					bpy.ops.scene.delete()
-			except: pass
+					#bpy.ops.sequencer.select_all(action = "SELECT")
+					#bpy.ops.sequencer.view_selected()
+				except: pass
+			else:
+				bpy.ops.scene.delete()
 
 	bpy.context.area.type = original_type
 	bpy.context.screen.scene = original_scene
