@@ -42,10 +42,8 @@ bpy.types.Scene.local_edit = bpy.props.BoolProperty(name="Local Edit",descriptio
 
 bad_obj_types = ['CAMERA','LAMP','MESH']
 global clip, clip_object, main_scene, log, fps, log_file, me, header_colors
-
-fps = 30
-
 header_colors = [(0.035,0.591,0.627), (0.631,0.694,0.318), (0.447,0.447,0.447)]
+fps = 30
 
 # -- FUNCTIONS - 2.0 ----------------------------------------------------
 # clip = clip name
@@ -473,16 +471,18 @@ def import_clip(scene,clip,inpoint,outpoint,mark):
 				except: pass
 
 		length = outpoint - inpoint 
-		for s in bpy.context.selected_sequences:
-			s.frame_final_start = frame + inpoint
-			s.frame_final_end = frame + outpoint
-		bpy.ops.sequencer.snap(frame = bpy.context.scene.frame_current)
-		if mark :
-			bpy.ops.marker.add()
-			bpy.ops.marker.rename(name=os.path.basename(clip).split('#')[0])
-		bpy.context.scene.frame_current += length
-		if mark :
-			bpy.context.scene.frame_end = bpy.context.scene.frame_current
+		try:
+			for s in bpy.context.selected_sequences:
+				s.frame_final_start = frame + inpoint
+				s.frame_final_end = frame + outpoint
+			bpy.ops.sequencer.snap(frame = bpy.context.scene.frame_current)
+			if mark :
+				bpy.ops.marker.add()
+				bpy.ops.marker.rename(name=os.path.basename(clip).split('#')[0])
+			bpy.context.scene.frame_current += length
+			if mark :
+				bpy.context.scene.frame_end = bpy.context.scene.frame_current
+		except: pass
 
 	bpy.context.screen.scene = original_scene
 	bpy.context.area.type = original_type
@@ -523,14 +523,12 @@ def create_tag_scenes():
 	for i in bpy.data.scenes:
 		if i.name.startswith('Tag: ') :
 			bpy.context.screen.scene = i
-			if len(bpy.context.scene.sequence_editor.sequences) > 0 :
-				try:
+			try:
+				if len(bpy.context.scene.sequence_editor.sequences) > 0 :
 					bpy.ops.sequencer.view_all()
-					#bpy.ops.sequencer.select_all(action = "SELECT")
-					#bpy.ops.sequencer.view_selected()
-				except: pass
-			else:
-				bpy.ops.scene.delete()
+				else:
+					bpy.ops.scene.delete()
+			except: pass
 
 	bpy.context.area.type = original_type
 	bpy.context.screen.scene = original_scene
@@ -966,8 +964,6 @@ def register():
 	bpy.utils.register_class(OBJECT_OT_Setout)
 	bpy.utils.register_class(OBJECT_OT_Place)
 	bpy.utils.register_class(OBJECT_OT_Back)
-	#bpy.utils.register_class(SEQUENCER_OT_createlog)
-	#bpy.types.OBJECT_MT_easy_log.append(log_func)
 	bpy.types.OBJECT_MT_easy_log.append(createTagScene_func)
 	bpy.types.OBJECT_MT_easy_log.append(deleteTagScene_func)
 	bpy.types.OBJECT_MT_easy_log.append(createLogText_func)
@@ -999,8 +995,6 @@ def unregister():
 	bpy.utils.unregister_class(OBJECT_OT_Setout)
 	bpy.utils.unregister_class(OBJECT_OT_Place)
 	bpy.utils.unregister_class(OBJECT_OT_Back)
-	#bpy.utils.unregister_class(SEQUENCER_OT_createlog)
-	#bpy.types.OBJECT_MT_easy_log.remove(log_func)
 	bpy.utils.unregister_class(SEQUENCER_OT_create_tag_scenes)
 	bpy.utils.unregister_class(SEQUENCER_OT_delete_tag_scenes)
 	bpy.utils.unregister_class(SEQUENCER_OT_create_log_text)
