@@ -550,10 +550,9 @@ def create_new_log_file():
 
 # Trim an area regarding the IN and OUT points
 def trim_area(scene, inpoint, outpoint):
-
+	strips = bpy.context.scene.sequence_editor.sequences
 	# is it safe to cut on the left?
 	safe = False
-	strips = bpy.context.scene.sequence_editor.sequences
 	for s in strips:
 		if s.type != 'COLOR' and s.frame_final_start < bpy.context.scene.frame_start :
 			safe = True
@@ -565,7 +564,6 @@ def trim_area(scene, inpoint, outpoint):
 		bpy.ops.sequencer.delete()
 	# is it safe to cut on the right?
 	safe = False
-	strips = bpy.context.scene.sequence_editor.sequences
 	for s in strips:
 		if s.type != 'COLOR' and s.frame_final_end > bpy.context.scene.frame_end:
 			safe = True
