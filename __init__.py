@@ -19,7 +19,7 @@
 bl_info = {
 	"name": "Easy Logging beta",
 	"author": "Nicolas Priniotakis (Nikos), David McSween",
-	"version": (0,2,1,0),
+	"version": (0,2,1,5),
 	"blender": (2, 7, 4, 0),
 	"api": 44539,
 	"category": "Sequencer",
