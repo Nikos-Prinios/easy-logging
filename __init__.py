@@ -19,7 +19,7 @@
 bl_info = {
 	"name": "Easy Logging beta",
 	"author": "Nicolas Priniotakis (Nikos), David McSween",
-	"version": (0,2,1,5),
+	"version": (0,2,1,0),
 	"blender": (2, 7, 4, 0),
 	"api": 44539,
 	"category": "Sequencer",
@@ -41,8 +41,8 @@ bpy.types.Object.outpoint = bpy.props.IntProperty()
 bpy.types.Scene.local_edit = bpy.props.BoolProperty(name="Local Edit",description="Edit in the opened sequencer",default = True)
 
 bad_obj_types = ['CAMERA','LAMP','MESH']
-global clip, clip_object, main_scene, log, fps, log_file, me, header_colors
-header_colors = [(0.035,0.591,0.627), (0.631,0.694,0.318), (0.447,0.447,0.447)]
+global clip, clip_object, main_scene, log, fps, log_file, me, header_colors, current_scene
+current_scene = bpy.context.scene.name
 fps = 30
 
 # -- FUNCTIONS - 2.0 ----------------------------------------------------
@@ -368,10 +368,12 @@ def update_log():
 
 # Cool function written by Leon95
 def header_refresh(self, context):
-	global header_colors
+	global current_scene
 	scene_name = bpy.context.screen.scene.name
+	if current_scene == scene_name : return
+	current_scene = scene_name
 	pref = bpy.context.user_preferences
-
+	header_colors = [(0.035,0.591,0.627), (0.631,0.694,0.318), (0.447,0.447,0.447)]
 	if scene_name == 'Editing table': pref.themes[0].info.space.header = header_colors[0]
 	elif scene_name.startswith("Tag: "): pref.themes[0].info.space.header = header_colors[1]
 	else: pref.themes[0].info.space.header = header_colors[2]
