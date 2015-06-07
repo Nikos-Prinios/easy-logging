@@ -42,7 +42,7 @@ bpy.types.Scene.local_edit = bpy.props.BoolProperty(name="Local Edit",descriptio
 
 bad_obj_types = ['CAMERA','LAMP','MESH']
 global clip, clip_object, main_scene, log, fps, log_file, me, header_colors, current_scene
-#current_scene = bpy.context.scene.name
+current_scene = ''
 fps = 30
 
 # -- FUNCTIONS - 2.0 ----------------------------------------------------
@@ -951,10 +951,6 @@ class EasyLog(bpy.types.Menu):
 	bl_idname = "OBJECT_MT_easy_log"
 
 	def draw(self, context):
-		# initialize the current_scene here
-		global current_scene
-		current_scene = bpy.context.screen.scene
-
 		layout = self.layout
 
 def draw_item(self, context):
