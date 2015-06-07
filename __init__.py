@@ -885,7 +885,7 @@ class OBJECT_OT_Back(bpy.types.Operator):
 	bl_description = "Go back to the main sequence"
 	def invoke(self, context, event):
 		global main_scene
-		if bpy.context.screen.scene == bpy.data.scenes['Editing table']:
+		if bpy.context.screen.scene.name == 'Editing table':
 			update_log()
 		goto_main_scene()
 		return {'FINISHED'}
