@@ -53,6 +53,34 @@ fps = 30
 # outpoint - for either a clip or a tag
 # -----------------------------------------------------------------------
 
+#zoom function : zoom ( x factor ) on the active strip
+import bpy
+
+def zoom(factor):
+	scene = bpy.context.scene
+	original_type = bpy.context.area.type
+	bpy.context.area.type = "SEQUENCE_EDITOR"
+	#new = bpy.context.scene.sequence_editor.active_strip
+	new = bpy.context.selected_sequences
+	if new:
+		frame = new[0].frame_final_start
+		length = new[0].frame_final_end - frame
+		bpy.ops.sequencer.select_all(action = "DESELECT")
+		start = (frame - length * factor) + length
+		end = frame + length * factor
+
+		if start < scene.frame_start : start = scene.frame_start
+		if end > scene.frame_end : end = scene.frame_end
+
+		bpy.ops.sequencer.effect_strip_add(frame_start=start, frame_end=end, type='COLOR', color=(1,1,1), overlap=True)
+		bpy.ops.sequencer.view_selected()
+		bpy.ops.sequencer.delete()
+		#bpy.context.scene.sequence_editor.active_strip = new
+		for s in new :
+			s.select = True
+	bpy.context.area.type = original_type
+
+
 # Do I need to metastrip ?
 def meta():
 	meta = False
@@ -676,8 +704,11 @@ class OBJECT_OT_Place(bpy.types.Operator):
 							s.select = True
 				bpy.ops.sequencer.copy()
 				goto_main_scene()
+				bpy.ops.sequencer.select_all(action = "DESELECT")
 				bpy.ops.sequencer.paste()
+				zoom(3)
 				bpy.context.scene.frame_current = bpy.context.scene.frame_current + (outpoint-inpoint)
+				
 				# clean up
 				reset_editing_table()
 				if main_scene.local_edit == False:
