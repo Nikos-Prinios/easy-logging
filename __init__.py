@@ -57,27 +57,30 @@ fps = 30
 import bpy
 
 def zoom(factor):
+	# not useful here, but maybe later
 	scene = bpy.context.scene
 	original_type = bpy.context.area.type
 	bpy.context.area.type = "SEQUENCE_EDITOR"
-	#new = bpy.context.scene.sequence_editor.active_strip
 	new = bpy.context.selected_sequences
+
 	if new:
+		bpy.ops.sequencer.select_all(action = "DESELECT")
+		''' variables '''
 		frame = new[0].frame_final_start
 		length = new[0].frame_final_end - frame
-		bpy.ops.sequencer.select_all(action = "DESELECT")
 		start = (frame - length * factor) + length
 		end = frame + length * factor
-
+		''' avoiding a big mess '''
 		if start < scene.frame_start : start = scene.frame_start
 		if end > scene.frame_end : end = scene.frame_end
-
+		''' adding the temporary strip and delete it after the zoom '''
 		bpy.ops.sequencer.effect_strip_add(frame_start=start, frame_end=end, type='COLOR', color=(1,1,1), overlap=True)
 		bpy.ops.sequencer.view_selected()
 		bpy.ops.sequencer.delete()
-		#bpy.context.scene.sequence_editor.active_strip = new
+		''' reselect the new clips '''
 		for s in new :
 			s.select = True
+
 	bpy.context.area.type = original_type
 
 
