@@ -70,11 +70,12 @@ def zoom(factor):
 		length = new[0].frame_final_end - frame
 		start = (frame - length * factor) + length
 		end = frame + length * factor
+		chan = new[0].channel
 		''' avoiding a big mess '''
 		if start < scene.frame_start : start = scene.frame_start
 		if end > scene.frame_end : end = scene.frame_end
 		''' adding the temporary strip and delete it after the zoom '''
-		bpy.ops.sequencer.effect_strip_add(frame_start=start, frame_end=end, type='COLOR', color=(1,1,1), overlap=True)
+		bpy.ops.sequencer.effect_strip_add(frame_start=start, frame_end=end, type='COLOR', color=(1,1,1), overlap=True, channel=chan)
 		bpy.ops.sequencer.view_selected()
 		bpy.ops.sequencer.delete()
 		''' reselect the new clips '''
@@ -707,7 +708,8 @@ class OBJECT_OT_Place(bpy.types.Operator):
 							s.select = True
 				bpy.ops.sequencer.copy()
 				goto_main_scene()
-				bpy.ops.sequencer.select_all(action = "DESELECT")
+				try : bpy.ops.sequencer.select_all(action = "DESELECT")
+				except : pass #nothing to deselect
 				bpy.ops.sequencer.paste()
 				zoom(3)
 				bpy.context.scene.frame_current = bpy.context.scene.frame_current + (outpoint-inpoint)
